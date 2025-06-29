@@ -279,14 +279,26 @@ export class UnifiedLocalStorage {
       }
       
       if (data.flashcards && Array.isArray(data.flashcards)) {
+        // Get existing flashcards to merge with imported ones
+        const existingFlashcards = this.getFlashcards();
+        
         // Transform legacy format to ChindoSpeak format
         const transformedFlashcards = data.flashcards.map((card: any) => {
           const today = new Date().toISOString().split('T')[0];
           
+          // Debug logging
+          console.log('Importing card:', card);
+          console.log('Card has text field:', card.text);
+          console.log('Card has word field:', card.word);
+          console.log('Card has chinese field:', card.chinese);
+          
           // Handle Indonesian format with text/translation fields
-          return {
+          const wordValue = card.text || card.chinese || card.word || '';
+          console.log('Word will be set to:', wordValue);
+          
+          const transformedCard = {
             id: card.id || crypto.randomUUID(),
-            word: card.text || card.chinese || card.word || '',
+            word: wordValue,
             pronunciation: card.pinyin || card.pronunciation || '',
             translation: card.translation || card.english || '',
             categoryId: card.categoryId || undefined,
@@ -310,9 +322,24 @@ export class UnifiedLocalStorage {
             speakingNextReviewDate: card.speakingNextReviewDate || today,
             speakingDifficulty: 1
           };
+          
+          console.log('Transformed to:', transformedCard);
+          return transformedCard;
         });
         
-        this.saveFlashcards(transformedFlashcards);
+        // Create a map of existing flashcards for easy lookup
+        const existingCardsMap = new Map(existingFlashcards.map(card => [card.id, card]));
+        
+        // Merge transformed flashcards, updating existing ones and adding new ones
+        transformedFlashcards.forEach(card => {
+          existingCardsMap.set(card.id, card);
+        });
+        
+        // Convert map back to array
+        const mergedFlashcards = Array.from(existingCardsMap.values());
+        
+        this.saveFlashcards(mergedFlashcards);
+        console.log(`Imported ${transformedFlashcards.length} flashcards, total: ${mergedFlashcards.length}`);
       }
       
       if (data.settings && typeof data.settings === 'object') {
