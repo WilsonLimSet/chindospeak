@@ -288,24 +288,24 @@ export class UnifiedLocalStorage {
             word: card.chinese || card.word || '',
             pronunciation: card.pinyin || card.pronunciation || '',
             translation: card.english || card.translation || '',
-            categoryId: card.categoryId,
+            categoryId: card.categoryId || undefined,
             difficulty: card.reviewLevel || 1,
             createdAt: card.createdAt ? new Date(card.createdAt) : new Date(),
             updatedAt: new Date(),
             reviewHistory: [],
             
-            // Reading skill
-            readingReviewLevel: card.readingReviewLevel || 0,
+            // Reading skill - handle missing fields gracefully
+            readingReviewLevel: card.readingReviewLevel !== undefined ? card.readingReviewLevel : 0,
             readingNextReviewDate: card.readingNextReviewDate || today,
             readingDifficulty: 1,
             
-            // Listening skill
-            listeningReviewLevel: card.listeningReviewLevel || 0,
+            // Listening skill - handle missing fields gracefully
+            listeningReviewLevel: card.listeningReviewLevel !== undefined ? card.listeningReviewLevel : 0,
             listeningNextReviewDate: card.listeningNextReviewDate || today,
             listeningDifficulty: 1,
             
-            // Speaking skill
-            speakingReviewLevel: card.speakingReviewLevel || 0,
+            // Speaking skill - handle missing fields gracefully
+            speakingReviewLevel: card.speakingReviewLevel !== undefined ? card.speakingReviewLevel : 0,
             speakingNextReviewDate: card.speakingNextReviewDate || today,
             speakingDifficulty: 1
           };

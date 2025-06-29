@@ -1,10 +1,10 @@
 {
   "name": "chindospeak-unified",
   "version": "1.0.0",
-  "description": "Unified language learning platform supporting multiple languages",
+  "description": "Speaking chinese and indo",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

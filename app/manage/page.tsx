@@ -214,10 +214,16 @@ export default function ManagePage() {
         const parsed = JSON.parse(data);
         
         // Validate the import data structure
-        if (!Array.isArray(parsed) || !parsed.every(item => 
-          item.id && item.word && item.translation && item.createdAt
-        )) {
-          throw new Error('Invalid file format');
+        let flashcardsToImport = [];
+        
+        if (Array.isArray(parsed)) {
+          // Old format: direct array of flashcards
+          flashcardsToImport = parsed;
+        } else if (parsed.flashcards && Array.isArray(parsed.flashcards)) {
+          // New format: object with flashcards property
+          flashcardsToImport = parsed.flashcards;
+        } else {
+          throw new Error('Invalid file format - no flashcards found');
         }
 
         // Import the flashcards
@@ -228,7 +234,7 @@ export default function ManagePage() {
           loadData();
           
           // Show success message
-          alert(`Successfully imported ${parsed.length} flashcards!`);
+          alert(`Successfully imported ${flashcardsToImport.length} flashcards!`);
         } else {
           throw new Error(result.message);
         }
