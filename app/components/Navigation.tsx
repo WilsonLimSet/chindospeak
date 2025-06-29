@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import PwaWrapper from "@/shared/components/PwaWrapper";
-import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import Link from "next/link";
 
@@ -41,23 +40,14 @@ export default function Navigation() {
       }}
     >
       <div className="container mx-auto flex justify-between items-center max-w-6xl px-2">
-        <Link href="/">
-          <div className="flex items-center min-w-0 flex-shrink-0">
-            <span className="text-sm sm:text-lg font-bold tracking-tight bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent transition-all duration-300 truncate">
-              {config.ui.appName}
-            </span>
-            <span className="ml-1 text-[7px] sm:text-[10px] bg-white px-1 py-0.5 rounded font-medium tracking-wide flex-shrink-0" style={{ color: config.theme.primary }}>
-              {config.nativeName}
-            </span>
-          </div>
+        <Link href="/" className="flex-shrink-0">
+          <span className="text-sm sm:text-lg font-bold tracking-tight text-white">
+            ChindoSpeak
+          </span>
         </Link>
         
-        <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
-          <div className="hidden md:block flex-shrink-0">
-            <LanguageSwitcher />
-          </div>
-          
-          <div className="flex space-x-0.5 sm:space-x-1 overflow-x-auto">
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="flex space-x-1 sm:space-x-2">
             <NavLink href="/review" current={pathname === "/review"} config={config}>
               {config.ui.navigation.review}
             </NavLink>
@@ -70,10 +60,6 @@ export default function Navigation() {
             <NavLink href="/manage" current={pathname === "/manage"} config={config}>
               {config.ui.navigation.manage}
             </NavLink>
-          </div>
-          
-          <div className="md:hidden flex-shrink-0">
-            <LanguageSwitcher />
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import Navigation from "./components/Navigation";
 import OfflineDetector from '@/shared/components/OfflineDetector';
 import InstallPrompt from './components/InstallPrompt';
 import InstallInstructions from './components/InstallInstructions';
+import ConditionalFloatingLanguageSwitcher from '@/shared/components/ConditionalFloatingLanguageSwitcher';
 import { Analytics } from '@vercel/analytics/react';
 import { PwaProvider } from '@/shared/contexts/PwaContext';
 import { LanguageProvider } from '@/shared/contexts/LanguageContext';
@@ -88,6 +89,7 @@ export default function RootLayout({
             <OfflineDetector />
             <InstallPrompt />
             <InstallInstructions />
+            <ConditionalFloatingLanguageSwitcher />
             <Analytics />
           </PwaProvider>
         </LanguageProvider>

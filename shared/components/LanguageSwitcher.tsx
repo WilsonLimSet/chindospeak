@@ -4,13 +4,18 @@ import { useState } from 'react';
 import { Globe, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/shared/contexts/LanguageContext';
 
-export default function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  onLanguageChange?: () => void;
+}
+
+export default function LanguageSwitcher({ onLanguageChange }: LanguageSwitcherProps = {}) {
   const { currentLanguage, config, switchLanguage, availableLanguages } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLanguageSwitch = (languageKey: string) => {
     switchLanguage(languageKey as any);
     setIsOpen(false);
+    onLanguageChange?.();
   };
 
   return (

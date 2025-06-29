@@ -9,11 +9,12 @@ import { usePwa } from "@/shared/contexts/PwaContext";
 import PwaWrapper from "@/shared/components/PwaWrapper";
 import { Flashcard, Category } from "@/shared/types";
 import isChinese from 'is-chinese';
-import { PlusCircle, BookOpen, Volume2, Mic, Settings, MessageCircle } from 'lucide-react';
+import { PlusCircle, BookOpen, Volume2, Mic, Settings, MessageCircle, Globe } from 'lucide-react';
 import Link from 'next/link';
+import LanguageSwitcher from '@/shared/components/LanguageSwitcher';
 
 export default function HomePage() {
-  const { config, service, currentLanguage } = useLanguage();
+  const { config, service, currentLanguage, switchLanguage, availableLanguages } = useLanguage();
   const { isPwa, showInstallPrompt } = usePwa();
   const [word, setWord] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -372,6 +373,48 @@ export default function HomePage() {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Language Switcher - Prominent */}
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Choose Your Learning Language</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Currently learning: {config.name}</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {availableLanguages.map(({ key, config: langConfig }) => (
+              <button
+                key={key}
+                onClick={() => switchLanguage(key as any)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                  currentLanguage === key
+                    ? 'border-opacity-100 shadow-lg transform scale-105'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-opacity-60'
+                }`}
+                style={{
+                  borderColor: currentLanguage === key ? langConfig.theme.primary : undefined,
+                  backgroundColor: currentLanguage === key ? langConfig.theme.primary + '10' : undefined
+                }}
+              >
+                <div className="text-center">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+                    {langConfig.name}
+                  </h4>
+                  <p className="text-xl font-bold mb-1" style={{ 
+                    color: currentLanguage === key ? langConfig.theme.primary : undefined 
+                  }}>
+                    {langConfig.nativeName}
+                  </p>
+                  {currentLanguage === key && (
+                    <p className="text-xs font-medium" style={{ color: langConfig.theme.primary }}>
+                      Currently Active
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Conversation Feature - Make it prominent */}
