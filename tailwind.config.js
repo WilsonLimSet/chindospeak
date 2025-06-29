@@ -10,11 +10,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Chinese theme colors (from flash-learn)
-        'fl-red': '#ef4444',
-        'fl-salmon': '#ffa500',
-        'fl-gray': '#f5f5f5',
-        'fl-yellow': {
+        // Chinese theme colors
+        'cs-red': '#ef4444',
+        'cs-salmon': '#ffa500',
+        'cs-gray': '#f5f5f5',
+        'cs-yellow': {
           'DEFAULT': '#f59e0b',
           'light': '#fbbf24'
         },

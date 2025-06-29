@@ -200,10 +200,10 @@ export default function HomePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 min-h-screen">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+      <div className="space-y-6">
         {/* Create Form Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
           <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
             <PlusCircle className="w-6 h-6 mr-3" style={{ color: config.theme.primary }} />
             Create Flashcard

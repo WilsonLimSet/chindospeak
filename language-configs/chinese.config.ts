@@ -52,7 +52,7 @@ export const chineseConfig: BaseLanguageConfig = {
   } as PronunciationServiceConfig,
 
   ui: {
-    appName: 'FlashLearn',
+    appName: 'ChindoSpeak',
     navigation: {
       listen: '听',
       speak: '说',
@@ -82,8 +82,8 @@ export const chineseConfig: BaseLanguageConfig = {
   },
 
   theme: {
-    primary: '#ef4444', // fl-red
-    secondary: '#ffa500', // fl-salmon  
+    primary: '#ef4444', // cs-red
+    secondary: '#ffa500', // cs-salmon  
     accent: '#ff6b6b',
     background: '#ffffff',
     text: '#000000'

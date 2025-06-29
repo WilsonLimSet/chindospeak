@@ -267,7 +267,7 @@ export class UnifiedLocalStorage {
       
       // Import categories first
       if (data.categories && Array.isArray(data.categories)) {
-        // Transform flash-learn categories format
+        // Transform legacy categories format
         const transformedCategories = data.categories.map((category: any) => ({
           id: category.id || crypto.randomUUID(),
           name: category.name || 'Unnamed Category',
@@ -279,7 +279,7 @@ export class UnifiedLocalStorage {
       }
       
       if (data.flashcards && Array.isArray(data.flashcards)) {
-        // Transform flash-learn format to ChindoSpeak format
+        // Transform legacy format to ChindoSpeak format
         const transformedFlashcards = data.flashcards.map((card: any) => {
           const today = new Date().toISOString().split('T')[0];
           

@@ -4,7 +4,7 @@ A unified Progressive Web App (PWA) architecture for language learning applicati
 
 ## Architecture Overview
 
-This project implements a unified architecture that consolidates the flash-learn (Chinese) and ajar (Indonesian) applications into a single, maintainable codebase.
+This project implements a unified architecture that consolidates the Chinese and Indonesian language learning applications into a single, maintainable codebase.
 
 ### Directory Structure
 
@@ -21,8 +21,8 @@ chindospeak/
 │   ├── chinese.config.ts   # Chinese language configuration
 │   └── indonesian.config.ts # Indonesian language configuration
 ├── apps/
-│   ├── flash-learn/        # Chinese learning app instance
-│   └── ajar/              # Indonesian learning app instance
+│   ├── chinese/            # Chinese learning app instance
+│   └── indonesian/         # Indonesian learning app instance
 └── package.json           # Root package configuration
 ```
 
@@ -94,7 +94,7 @@ Unified text-to-speech system with:
 
 ## Migration from Original Apps
 
-The original apps (flash-learn and ajar) have been analyzed and their common components extracted into the shared directory. Language-specific functionality has been abstracted into configuration files, allowing for easy maintenance and extension.
+The original language-specific apps have been analyzed and their common components extracted into the shared directory. Language-specific functionality has been abstracted into configuration files, allowing for easy maintenance and extension.
 
 ## Technology Stack
 

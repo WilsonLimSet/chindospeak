@@ -46,7 +46,7 @@ export const indonesianConfig: BaseLanguageConfig = {
   } as TranslationServiceConfig,
 
   ui: {
-    appName: 'Ajar',
+    appName: 'ChindoSpeak',
     navigation: {
       listen: 'Dengar',
       speak: 'Bicara',
