@@ -87,7 +87,7 @@ function NavLink({
     <Link
       href={href}
       className={`px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5 md:py-2 rounded-md sm:rounded-lg whitespace-nowrap ${
-        isComplexScript ? 'text-sm sm:text-base md:text-lg font-medium' : 'text-[10px] sm:text-xs md:text-sm font-medium'
+        isComplexScript ? 'text-base sm:text-lg md:text-xl font-medium' : 'text-sm sm:text-base md:text-lg font-medium'
       } ${
         current 
           ? 'text-white bg-white/20 shadow-lg' 

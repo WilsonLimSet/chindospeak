@@ -6,6 +6,7 @@ import OfflineDetector from '@/shared/components/OfflineDetector';
 import InstallPrompt from './components/InstallPrompt';
 import InstallInstructions from './components/InstallInstructions';
 import ConditionalFloatingLanguageSwitcher from '@/shared/components/ConditionalFloatingLanguageSwitcher';
+import DynamicThemeColor from '@/shared/components/DynamicThemeColor';
 import { Analytics } from '@vercel/analytics/react';
 import { PwaProvider } from '@/shared/contexts/PwaContext';
 import { LanguageProvider } from '@/shared/contexts/LanguageContext';
@@ -82,6 +83,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
         <LanguageProvider>
           <PwaProvider appName="ChindoSpeak">
+            <DynamicThemeColor />
             <Navigation />
             <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
               {children}
