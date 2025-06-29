@@ -417,7 +417,7 @@ export default function ManagePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl min-h-screen">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-6xl min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
           <svg className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,21 +456,23 @@ export default function ManagePage() {
         </div>
         
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex-1">
+        <div className="mb-6">
+          {/* Search Bar */}
+          <div className="mb-4">
             <input
               type="text"
               placeholder="Search flashcards..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
           </div>
           
-          <div className="flex gap-2">
+          {/* Action Buttons - Mobile Friendly Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             <button
               onClick={() => setSortByDifficulty(!sortByDifficulty)}
-              className={`px-4 py-2 rounded-md text-sm ${
+              className={`px-3 py-2 rounded-md text-xs sm:text-sm ${
                 sortByDifficulty 
                   ? 'text-white' 
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
@@ -479,23 +481,23 @@ export default function ManagePage() {
                 backgroundColor: sortByDifficulty ? config.theme.primary : undefined
               }}
             >
-              Sort by Difficulty
+              Sort
             </button>
             
             <button
               onClick={() => setShowCategoryManageModal(true)}
-              className="px-4 py-2 text-white rounded-md hover:opacity-90 flex items-center gap-2"
+              className="px-3 py-2 text-white rounded-md hover:opacity-90 text-xs sm:text-sm flex items-center justify-center gap-1"
               style={{ backgroundColor: config.theme.primary }}
             >
-              <Plus className="w-4 h-4" />
-              Manage Categories
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              Categories
             </button>
             
             <button
               onClick={() => setShowCategoryFilter(true)}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-2"
+              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 text-xs sm:text-sm flex items-center justify-center gap-1"
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
               Filter
             </button>
             
@@ -508,7 +510,7 @@ export default function ManagePage() {
             />
             <label
               htmlFor="import-file"
-              className="px-4 py-2 text-white rounded-md hover:opacity-90 cursor-pointer"
+              className="px-3 py-2 text-white rounded-md hover:opacity-90 cursor-pointer text-xs sm:text-sm text-center"
               style={{ backgroundColor: config.theme.primary }}
             >
               Import
@@ -516,7 +518,7 @@ export default function ManagePage() {
             
             <button
               onClick={handleExport}
-              className="px-4 py-2 text-white rounded-md hover:opacity-90"
+              className="px-3 py-2 text-white rounded-md hover:opacity-90 text-xs sm:text-sm"
               style={{ backgroundColor: config.theme.secondary }}
             >
               Export

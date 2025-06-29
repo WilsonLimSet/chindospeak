@@ -106,7 +106,18 @@ export default function HomePage() {
         // For Chinese, extract translation and get pinyin
         if (result.trans_result && result.trans_result[0]) {
           translationData.translation = result.trans_result[0].dst;
-          translationData.romanization = result.trans_result[0].src_tts || await service.getRomanization!(word);
+          
+          // Check if src_tts contains actual pinyin (not Chinese characters)
+          let pinyinFromBaidu = result.trans_result[0].src_tts;
+          const hasChinese = pinyinFromBaidu && isChinese(pinyinFromBaidu);
+          
+          if (pinyinFromBaidu && !hasChinese) {
+            // Baidu returned valid pinyin
+            translationData.romanization = pinyinFromBaidu;
+          } else {
+            // Baidu didn't return pinyin or returned Chinese characters, use our fallback
+            translationData.romanization = await service.getRomanization!(word);
+          }
         }
       } else if (currentLanguage === 'indonesian') {
         // For Indonesian using MyMemory format
@@ -363,6 +374,36 @@ export default function HomePage() {
           )}
         </div>
 
+        {/* Conversation Feature - Make it prominent */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 p-6 rounded-xl shadow-lg border border-blue-200 dark:border-blue-700">
+          <div className="flex items-center mb-4">
+            <MessageCircle className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} />
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">AI Conversation Practice</h2>
+              <p className="text-gray-600 dark:text-gray-400">Practice real conversations with AI in {config.name}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🎯 Smart Scenarios</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Restaurant orders, directions, shopping, and more</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🧠 Uses Your Vocabulary</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">AI knows your flashcards and adapts conversations</p>
+            </div>
+          </div>
+          
+          <Link href="/converse" className="block">
+            <button className="w-full py-4 px-6 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center text-white"
+              style={{ backgroundColor: config.theme.primary }}>
+              <MessageCircle className="w-6 h-6 mr-3" />
+              Start Conversation Practice
+            </button>
+          </Link>
+        </div>
+
         {/* Overview Section */}
         <div className="space-y-6">
           {/* Stats Cards */}
@@ -404,8 +445,8 @@ export default function HomePage() {
 
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Quick Actions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Study Modes</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Link href="/review" className="flex items-center p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-opacity-60 transition-colors group" style={{ borderColor: config.theme.primary + '40' }}>
                 <BookOpen className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" style={{ color: config.theme.primary }} />
                 <div>
@@ -427,14 +468,6 @@ export default function HomePage() {
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">Speak Mode</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Test your pronunciation</p>
-                </div>
-              </Link>
-              
-              <Link href="/converse" className="flex items-center p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-opacity-60 transition-colors group" style={{ borderColor: config.theme.primary + '40' }}>
-                <MessageCircle className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" style={{ color: config.theme.primary }} />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Conversation</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Practice with AI chat</p>
                 </div>
               </Link>
               

@@ -265,8 +265,53 @@ export class UnifiedLocalStorage {
     try {
       const data = JSON.parse(jsonData);
       
+      // Import categories first
+      if (data.categories && Array.isArray(data.categories)) {
+        // Transform flash-learn categories format
+        const transformedCategories = data.categories.map((category: any) => ({
+          id: category.id || crypto.randomUUID(),
+          name: category.name || 'Unnamed Category',
+          color: category.color || '#FF5733',
+          createdAt: category.createdAt ? new Date(category.createdAt) : new Date()
+        }));
+        
+        this.saveCategories(transformedCategories);
+      }
+      
       if (data.flashcards && Array.isArray(data.flashcards)) {
-        this.saveFlashcards(data.flashcards);
+        // Transform flash-learn format to ChindoSpeak format
+        const transformedFlashcards = data.flashcards.map((card: any) => {
+          const today = new Date().toISOString().split('T')[0];
+          
+          return {
+            id: card.id || crypto.randomUUID(),
+            word: card.chinese || card.word || '',
+            pronunciation: card.pinyin || card.pronunciation || '',
+            translation: card.english || card.translation || '',
+            categoryId: card.categoryId,
+            difficulty: card.reviewLevel || 1,
+            createdAt: card.createdAt ? new Date(card.createdAt) : new Date(),
+            updatedAt: new Date(),
+            reviewHistory: [],
+            
+            // Reading skill
+            readingReviewLevel: card.readingReviewLevel || 0,
+            readingNextReviewDate: card.readingNextReviewDate || today,
+            readingDifficulty: 1,
+            
+            // Listening skill
+            listeningReviewLevel: card.listeningReviewLevel || 0,
+            listeningNextReviewDate: card.listeningNextReviewDate || today,
+            listeningDifficulty: 1,
+            
+            // Speaking skill
+            speakingReviewLevel: card.speakingReviewLevel || 0,
+            speakingNextReviewDate: card.speakingNextReviewDate || today,
+            speakingDifficulty: 1
+          };
+        });
+        
+        this.saveFlashcards(transformedFlashcards);
       }
       
       if (data.settings && typeof data.settings === 'object') {
