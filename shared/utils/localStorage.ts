@@ -283,13 +283,14 @@ export class UnifiedLocalStorage {
         const transformedFlashcards = data.flashcards.map((card: any) => {
           const today = new Date().toISOString().split('T')[0];
           
+          // Handle Indonesian format with text/translation fields
           return {
             id: card.id || crypto.randomUUID(),
-            word: card.chinese || card.word || '',
+            word: card.text || card.chinese || card.word || '',
             pronunciation: card.pinyin || card.pronunciation || '',
-            translation: card.english || card.translation || '',
+            translation: card.translation || card.english || '',
             categoryId: card.categoryId || undefined,
-            difficulty: card.reviewLevel || 1,
+            difficulty: card.reviewLevel || card.difficulty || 1,
             createdAt: card.createdAt ? new Date(card.createdAt) : new Date(),
             updatedAt: new Date(),
             reviewHistory: [],
