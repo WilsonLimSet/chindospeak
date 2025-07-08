@@ -331,7 +331,7 @@ export class UnifiedLocalStorage {
         const existingCardsMap = new Map(existingFlashcards.map(card => [card.id, card]));
         
         // Merge transformed flashcards, updating existing ones and adding new ones
-        transformedFlashcards.forEach(card => {
+        transformedFlashcards.forEach((card: Flashcard) => {
           existingCardsMap.set(card.id, card);
         });
         
