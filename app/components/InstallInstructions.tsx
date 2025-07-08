@@ -44,8 +44,8 @@ export default function InstallInstructions() {
           <p className="mb-2">To install {config.ui.appName} on your iOS device:</p>
           <ol className="list-decimal pl-5 space-y-2">
             <li>Tap the Share button in Safari</li>
-            <li>Scroll down and tap "Add to Home Screen"</li>
-            <li>Tap "Add" in the top right corner</li>
+            <li>Scroll down and tap &ldquo;Add to Home Screen&rdquo;</li>
+            <li>Tap &ldquo;Add&rdquo; in the top right corner</li>
           </ol>
         </div>
         

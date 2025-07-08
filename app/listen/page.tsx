@@ -314,7 +314,7 @@ export default function ListenPage() {
       {!speechSupported && (
         <div className="bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 p-4 mb-6">
           <p className="text-yellow-700 dark:text-yellow-300">
-            Your browser doesn't support text-to-speech. Please try a different browser for the listening mode.
+            Your browser doesn&apos;t support text-to-speech. Please try a different browser for the listening mode.
           </p>
         </div>
       )}
@@ -352,7 +352,7 @@ export default function ListenPage() {
             {currentLanguage === 'chinese' ? '全部完成！' : 'All Done!'}
           </h2>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            You've reviewed all the cards in this category.
+            You&apos;ve reviewed all the cards in this category.
           </p>
           <div className="flex flex-col space-y-3">
             <Link href="/">

@@ -357,7 +357,7 @@ export default function ReviewPage() {
             {currentLanguage === 'chinese' ? '全部完成！' : 'All Done!'}
           </h2>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            You've reviewed all the cards in this category.
+            You&apos;ve reviewed all the cards in this category.
           </p>
           <div className="flex flex-col space-y-3">
             <Link href="/">

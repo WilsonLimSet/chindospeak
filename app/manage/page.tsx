@@ -1186,7 +1186,7 @@ export default function ManagePage() {
               Delete Category
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete this category? This will remove the category from all flashcards but won't delete the flashcards themselves.
+              Are you sure you want to delete this category? This will remove the category from all flashcards but won&apos;t delete the flashcards themselves.
             </p>
             <div className="flex justify-end space-x-3">
               <button

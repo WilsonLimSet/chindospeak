@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { UnifiedLocalStorage } from "@/shared/utils/localStorage";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
@@ -39,7 +39,7 @@ export default function ConversePage() {
     initializeSpeechAPIs();
   }, [localStorage]);
 
-  const initializeSpeechAPIs = () => {
+  const initializeSpeechAPIs = useCallback(() => {
     try {
       // Initialize Speech Recognition
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -87,7 +87,7 @@ export default function ConversePage() {
       console.error('Error initializing speech APIs:', error);
       setErrorMessage('Failed to initialize voice features.');
     }
-  };
+  }, [currentLanguage]);
 
   const startAudioVisualization = async () => {
     try {

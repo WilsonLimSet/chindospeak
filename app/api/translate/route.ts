@@ -116,6 +116,7 @@ async function handleGoogleTranslation(request: any) {
     
     if (!apiKey) {
       console.error('Google Cloud API key not configured');
+      console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('GOOGLE')));
       return handleMockResponse(request);
     }
     
