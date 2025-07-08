@@ -135,7 +135,12 @@ async function handleGoogleTranslation(request: any) {
       translation: result.translation,
       originalText: result.originalText,
       from: result.sourceLanguage,
-      to: result.targetLanguage
+      to: result.targetLanguage,
+      // Also include the nested structure for compatibility
+      trans_result: [{
+        src: result.originalText,
+        dst: result.translation
+      }]
     });
     
   } catch (error) {
@@ -176,7 +181,12 @@ function handleMockResponse(request: any) {
       translation: translation,
       originalText: request.text,
       from: request.sourceLanguage,
-      to: request.targetLanguage
+      to: request.targetLanguage,
+      // Also include the nested structure for compatibility
+      trans_result: [{
+        src: request.text,
+        dst: translation
+      }]
     });
   }
 }
