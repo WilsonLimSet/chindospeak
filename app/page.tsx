@@ -28,7 +28,7 @@ export default function HomePage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const [localStorage] = useState(() => new UnifiedLocalStorage(`${config.code}-flashcards`));
+  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
   const [stats, setStats] = useState({ total: 0, reviewed: 0, categories: 0 });
   const [isClient, setIsClient] = useState(false);
 

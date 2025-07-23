@@ -12,8 +12,8 @@ import Link from "next/link";
 export default function ListenPage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
-  const [localStorage] = useState(() => new UnifiedLocalStorage(`${config.code}-flashcards`));
-  const [audioService] = useState(() => new UnifiedAudioService(config.voiceOptions));
+  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
+  const audioService = new UnifiedAudioService(config.voiceOptions);
   
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);

@@ -10,7 +10,7 @@ import Link from "next/link";
 export default function ReviewPage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
-  const [localStorage] = useState(() => new UnifiedLocalStorage(`${config.code}-flashcards`));
+  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
   
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
