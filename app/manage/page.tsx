@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { UnifiedLocalStorage } from "@/shared/utils/localStorage";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { usePwa } from "@/shared/contexts/PwaContext";
@@ -12,7 +12,7 @@ import { Plus, Edit2, Trash2, Tag, Filter, BookOpen, Volume2, Mic } from "lucide
 export default function ManagePage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
-  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
+  const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
   
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
