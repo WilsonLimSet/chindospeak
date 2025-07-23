@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { UnifiedLocalStorage } from "@/shared/utils/localStorage";
 import { UnifiedTranslationService } from "@/shared/utils/translationService";
@@ -28,7 +28,7 @@ export default function HomePage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
+  const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
   const [stats, setStats] = useState({ total: 0, reviewed: 0, categories: 0 });
   const [isClient, setIsClient] = useState(false);
 
@@ -51,7 +51,7 @@ export default function HomePage() {
       reviewed: reviewedCards,
       categories: loadedCategories.length
     });
-  }, [localStorage, isClient]);
+  }, [isClient, config.code]);
 
   // Validate input based on language
   const isValidLanguageInput = useCallback((text: string): boolean => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { UnifiedLocalStorage } from "@/shared/utils/localStorage";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
@@ -12,7 +12,7 @@ import { MessageCircle, Mic, MicOff, Volume2, Play, Pause, Square, Waves, Settin
 export default function ConversePage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
-  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
+  const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
   
   const [currentSession, setCurrentSession] = useState<ConversationSession | null>(null);
   const [conversationState, setConversationState] = useState<'idle' | 'listening' | 'processing' | 'speaking'>('idle');
@@ -37,7 +37,7 @@ export default function ConversePage() {
     
     // Initialize speech APIs
     initializeSpeechAPIs();
-  }, [localStorage]);
+  }, [config.code]);
 
   const initializeSpeechAPIs = useCallback(() => {
     try {

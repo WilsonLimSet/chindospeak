@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { UnifiedLocalStorage } from "@/shared/utils/localStorage";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { usePwa } from "@/shared/contexts/PwaContext";
@@ -12,8 +12,8 @@ import Link from "next/link";
 export default function ListenPage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
-  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
-  const audioService = new UnifiedAudioService(config.voiceOptions);
+  const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
+  const audioService = useMemo(() => new UnifiedAudioService(config.voiceOptions), [config.voiceOptions]);
   
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
