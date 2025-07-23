@@ -12,7 +12,7 @@ import { MessageCircle, Mic, MicOff, Volume2, Play, Pause, Square, Waves, Settin
 export default function ConversePage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
-  const [localStorage] = useState(() => new UnifiedLocalStorage(`${config.code}-flashcards`));
+  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
   
   const [currentSession, setCurrentSession] = useState<ConversationSession | null>(null);
   const [conversationState, setConversationState] = useState<'idle' | 'listening' | 'processing' | 'speaking'>('idle');

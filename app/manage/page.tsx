@@ -12,7 +12,7 @@ import { Plus, Edit2, Trash2, Tag, Filter, BookOpen, Volume2, Mic } from "lucide
 export default function ManagePage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
-  const [localStorage] = useState(() => new UnifiedLocalStorage(`${config.code}-flashcards`));
+  const localStorage = new UnifiedLocalStorage(`${config.code}-flashcards`);
   
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
