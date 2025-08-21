@@ -70,7 +70,7 @@ export default function ManagePage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [localStorage]);
 
   useEffect(() => {
     // Reset to page 1 when search or sort or category changes

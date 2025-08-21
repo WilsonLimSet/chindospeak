@@ -36,15 +36,25 @@ interface LanguageProviderProps {
 }
 
 export function LanguageProvider({ children, defaultLanguage = 'chinese' }: LanguageProviderProps) {
-  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(defaultLanguage);
+  // Initialize with saved language if available
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(() => {
+    if (typeof window !== 'undefined') {
+      const savedLanguage = localStorage.getItem('preferred-language') as SupportedLanguage;
+      if (savedLanguage && languageConfigs[savedLanguage]) {
+        return savedLanguage;
+      }
+    }
+    return defaultLanguage;
+  });
+  
   const [service, setService] = useState<BaseLanguageService>(() => 
-    new languageConfigs[defaultLanguage].service()
+    new languageConfigs[currentLanguage].service()
   );
-
-  // Load saved language preference
+  
+  // Double-check on client side after hydration
   useEffect(() => {
     const savedLanguage = localStorage.getItem('preferred-language') as SupportedLanguage;
-    if (savedLanguage && languageConfigs[savedLanguage]) {
+    if (savedLanguage && languageConfigs[savedLanguage] && savedLanguage !== currentLanguage) {
       setCurrentLanguage(savedLanguage);
       setService(new languageConfigs[savedLanguage].service());
     }
