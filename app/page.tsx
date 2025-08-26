@@ -28,18 +28,23 @@ export default function HomePage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
   const [stats, setStats] = useState({ total: 0, reviewed: 0, categories: 0 });
   const [isClient, setIsClient] = useState(false);
+  
+  // Only create localStorage instance after client-side hydration
+  const localStorage = useMemo(() => {
+    if (!isClient) return null;
+    return new UnifiedLocalStorage(`${config.code}-flashcards`);
+  }, [config.code, isClient]);
 
   // Ensure client-side rendering
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Load categories and stats on component mount
+  // Load categories and stats on component mount and when language changes
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || !localStorage) return;
     
     const loadedCategories = localStorage.getCategories();
     setCategories(loadedCategories);
@@ -51,7 +56,7 @@ export default function HomePage() {
       reviewed: reviewedCards,
       categories: loadedCategories.length
     });
-  }, [isClient, config.code]);
+  }, [isClient, localStorage]);
 
   // Validate input based on language
   const isValidLanguageInput = useCallback((text: string): boolean => {
@@ -135,7 +140,7 @@ export default function HomePage() {
   };
 
   const handleSave = () => {
-    if (!translation) return;
+    if (!translation || !localStorage) return;
     
     const today = new Date().toISOString().split('T')[0];
     const newCard: Flashcard = {
