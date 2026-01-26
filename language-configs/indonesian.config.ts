@@ -52,7 +52,8 @@ export const indonesianConfig: BaseLanguageConfig = {
       speak: 'Bicara',
       review: 'Ulasan',
       create: 'Buat',
-      manage: 'Kelola'
+      manage: 'Kelola',
+      drive: 'Berkendara'
     },
     buttons: {
       play: 'Putar',
