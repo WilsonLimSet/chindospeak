@@ -42,10 +42,10 @@ export default function NotificationPermissionPrompt({
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-1">
-            Stay on track with reminders
+            Enable reminders
           </h4>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            Get notified when you have cards ready for review and keep your streak alive!
+            Get notified when cards are due for review.
           </p>
           <div className="flex gap-2">
             <button

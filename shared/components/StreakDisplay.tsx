@@ -18,7 +18,7 @@ export default function StreakDisplay({ streakData, primaryColor }: StreakDispla
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`p-2 rounded-full ${isActive ? 'animate-pulse' : ''}`}
+            className="p-2 rounded-full"
             style={{
               backgroundColor: isActive ? `${primaryColor}20` : '#f3f4f6'
             }}
@@ -38,12 +38,14 @@ export default function StreakDisplay({ streakData, primaryColor }: StreakDispla
                 {currentStreak}
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                day{currentStreak !== 1 ? 's' : ''}
+                day streak
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {hasReviewedToday ? 'Streak active!' : 'Review to keep streak'}
-            </p>
+            {!hasReviewedToday && currentStreak > 0 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Review today to continue
+              </p>
+            )}
           </div>
         </div>
         <div className="text-right">
