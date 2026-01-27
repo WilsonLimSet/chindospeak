@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Trophy, Sparkles, X } from 'lucide-react';
+import { playSuccess } from '@/shared/utils/soundEffects';
 
 interface ChallengeCompletionModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export default function ChallengeCompletionModal({ isOpen, onClose, primaryColor
   useEffect(() => {
     if (isOpen) {
       setShowConfetti(true);
+      playSuccess();
       const timer = setTimeout(() => setShowConfetti(false), 2000);
       return () => clearTimeout(timer);
     }

@@ -8,6 +8,7 @@ import AudioButton from "@/shared/components/AudioButton";
 import { UnifiedAudioService } from "@/shared/utils/audioService";
 import { Flashcard } from "@/shared/types";
 import Link from "next/link";
+import { playCorrect, playIncorrect } from "@/shared/utils/soundEffects";
 
 export default function SpeakPage() {
   const { config, currentLanguage } = useLanguage();
@@ -88,6 +89,13 @@ export default function SpeakPage() {
   
   const handleResult = (successful: boolean) => {
     if (!currentCard) return;
+
+    // Play sound effect
+    if (successful) {
+      playCorrect();
+    } else {
+      playIncorrect();
+    }
 
     // Update speaking review level using spaced repetition
     localStorage.updateSpeakingReviewLevel(currentCard.id, successful);

@@ -6,6 +6,9 @@ import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { usePwa } from "@/shared/contexts/PwaContext";
 import { Flashcard } from "@/shared/types";
 import Link from "next/link";
+import SwipeableCard from "@/shared/components/SwipeableCard";
+import { playCorrect, playIncorrect, isSoundEnabled, setSoundEnabled } from "@/shared/utils/soundEffects";
+import { Volume2, VolumeX } from "lucide-react";
 
 export default function ReviewPage() {
   const { config, currentLanguage } = useLanguage();
@@ -22,6 +25,12 @@ export default function ReviewPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null | undefined>(undefined);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [soundEnabled, setSoundEnabledState] = useState(true);
+
+  // Initialize sound state from localStorage
+  useEffect(() => {
+    setSoundEnabledState(isSoundEnabled());
+  }, []);
   
   useEffect(() => {
     const allCategories = localStorage.getCategories();
@@ -98,6 +107,13 @@ export default function ReviewPage() {
   const handleResult = (successful: boolean) => {
     if (!currentCard) return;
 
+    // Play sound effect
+    if (successful) {
+      playCorrect();
+    } else {
+      playIncorrect();
+    }
+
     // Update reading review level using spaced repetition
     localStorage.updateReadingReviewLevel(currentCard.id, successful);
 
@@ -105,7 +121,7 @@ export default function ReviewPage() {
     localStorage.updateChallengeProgress(1, 'review_count');
 
     setReviewedCards(prev => new Set(prev).add(currentCard.id));
-    
+
     if (!successful) {
       // Move card to back of queue for immediate retry
       setCards(prevCards => {
@@ -157,7 +173,29 @@ export default function ReviewPage() {
   const toggleCategoryFilter = () => {
     setShowCategoryFilter(!showCategoryFilter);
   };
-  
+
+  const toggleSound = () => {
+    const newValue = !soundEnabled;
+    setSoundEnabledState(newValue);
+    setSoundEnabled(newValue);
+  };
+
+  const renderSoundToggle = () => {
+    return (
+      <button
+        onClick={toggleSound}
+        className="flex items-center justify-center p-2 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        title={soundEnabled ? "Sound On" : "Sound Off"}
+      >
+        {soundEnabled ? (
+          <Volume2 className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+        ) : (
+          <VolumeX className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+        )}
+      </button>
+    );
+  };
+
   const renderCategoryFilterModal = () => {
     if (!showCategoryFilter) return null;
     
@@ -349,6 +387,7 @@ export default function ReviewPage() {
         <div className="flex space-x-2">
           {renderReviewModeToggle()}
           {renderDisplayModeToggle()}
+          {renderSoundToggle()}
           {renderFilterButton()}
         </div>
       </div>
@@ -387,19 +426,26 @@ export default function ReviewPage() {
       
       {/* Card */}
       {!isFinished && currentCard && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
-          {/* Card header with category if available */}
-          {currentCard.category && (
-            <div 
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ backgroundColor: config.theme.accent }}
-            >
-              {currentCard.category}
-            </div>
-          )}
-          
-          {/* Card content */}
-          <div className="p-6">
+        <SwipeableCard
+          onSwipeLeft={() => handleResult(false)}
+          onSwipeRight={() => handleResult(true)}
+          enabled={showAnswer}
+          leftLabel="Again"
+          rightLabel="Got It"
+        >
+          <div className="rounded-lg shadow-md overflow-hidden mb-6">
+            {/* Card header with category if available */}
+            {currentCard.category && (
+              <div
+                className="px-4 py-2 text-sm font-medium text-white"
+                style={{ backgroundColor: config.theme.accent }}
+              >
+                {currentCard.category}
+              </div>
+            )}
+
+            {/* Card content */}
+            <div className="p-6">
             {reviewMode === "wordToTranslation" ? (
               <>
                 <div className="mb-6 text-center">
@@ -481,8 +527,9 @@ export default function ReviewPage() {
             )}
           </div>
         </div>
+        </SwipeableCard>
       )}
-      
+
       {/* Actions */}
       {!isFinished && currentCard && (
         <div className="flex flex-col items-center">
