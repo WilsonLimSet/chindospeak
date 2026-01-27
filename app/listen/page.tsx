@@ -9,6 +9,7 @@ import { UnifiedAudioService } from "@/shared/utils/audioService";
 import { Flashcard } from "@/shared/types";
 import Link from "next/link";
 import { playCorrect, playIncorrect } from "@/shared/utils/soundEffects";
+import SwipeableCard from "@/shared/components/SwipeableCard";
 
 export default function ListenPage() {
   const { config, currentLanguage } = useLanguage();
@@ -392,51 +393,57 @@ export default function ListenPage() {
       
       {/* Card */}
       {!isFinished && currentCard && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
-          {/* Card header with category if available */}
-          {currentCard.category && (
-            <div 
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ backgroundColor: config.theme.accent }}
-            >
-              {currentCard.category}
-            </div>
-          )}
-          
-          {/* Card content */}
-          <div className="p-6">
-            <div className="mb-6 text-center">
-              <div className="flex justify-center mb-4">
-                <AudioButton 
-                  text={currentCard.word} 
-                  size="lg"
-                  showText={true}
-                  isPlayingExternal={isPlaying}
-                  onPlayStateChange={(playing) => setIsPlaying(playing)}
-                  voiceConfig={config.voiceOptions}
-                  iconType="svg"
-                  primaryColor={config.theme.primary}
-                />
+        <SwipeableCard
+          onSwipeLeft={() => handleResult(false)}
+          onSwipeRight={() => handleResult(true)}
+          enabled={showAnswer}
+        >
+          <div className="rounded-lg shadow-md overflow-hidden mb-6">
+            {/* Card header with category if available */}
+            {currentCard.category && (
+              <div
+                className="px-4 py-2 text-sm font-medium text-white"
+                style={{ backgroundColor: config.theme.accent }}
+              >
+                {currentCard.category}
               </div>
-              
-              {showAnswer && (
-                <div className="mt-2">
-                  <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                    {currentCard.word}
-                  </h2>
-                  {currentCard.pronunciation && (
-                    <p className="text-lg text-gray-600 dark:text-gray-400">
-                      {currentCard.pronunciation}
-                    </p>
-                  )}
-                  <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">
-                    {currentCard.translation}
-                  </p>
+            )}
+
+            {/* Card content */}
+            <div className="p-6">
+              <div className="mb-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <AudioButton
+                    text={currentCard.word}
+                    size="lg"
+                    showText={true}
+                    isPlayingExternal={isPlaying}
+                    onPlayStateChange={(playing) => setIsPlaying(playing)}
+                    voiceConfig={config.voiceOptions}
+                    iconType="svg"
+                    primaryColor={config.theme.primary}
+                  />
                 </div>
-              )}
+
+                {showAnswer && (
+                  <div className="mt-2">
+                    <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                      {currentCard.word}
+                    </h2>
+                    {currentCard.pronunciation && (
+                      <p className="text-lg text-gray-600 dark:text-gray-400">
+                        {currentCard.pronunciation}
+                      </p>
+                    )}
+                    <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">
+                      {currentCard.translation}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </SwipeableCard>
       )}
       
       {/* Actions */}

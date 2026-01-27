@@ -9,6 +9,7 @@ import { UnifiedAudioService } from "@/shared/utils/audioService";
 import { Flashcard } from "@/shared/types";
 import Link from "next/link";
 import { playCorrect, playIncorrect } from "@/shared/utils/soundEffects";
+import SwipeableCard from "@/shared/components/SwipeableCard";
 
 export default function SpeakPage() {
   const { config, currentLanguage } = useLanguage();
@@ -332,56 +333,62 @@ export default function SpeakPage() {
       
       {/* Card */}
       {!isFinished && currentCard && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
-          {/* Card header with category if available */}
-          {currentCard.category && (
-            <div 
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ backgroundColor: config.theme.accent }}
-            >
-              {currentCard.category}
-            </div>
-          )}
-          
-          {/* Card content - REVERSED: showing English first for speaking practice */}
-          <div className="p-6">
-            <div className="mb-6 text-center">
-              {/* Show translation first (what they need to say) */}
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
-                {currentCard.translation}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                {currentLanguage === 'chinese' ? '说出中文' : 'Say in ' + config.name}
-              </p>
-              
-              {showAnswer && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                    {currentCard.word}
-                  </h3>
-                  {currentCard.pronunciation && (
-                    <p className="text-lg text-gray-600 dark:text-gray-400">
-                      {currentCard.pronunciation}
-                    </p>
-                  )}
-                  
-                  {/* Add audio button for pronunciation help */}
-                  {speechSupported && (
-                    <div className="mt-4 flex justify-center">
-                      <AudioButton 
-                        text={currentCard.word} 
-                        size="md" 
-                        voiceConfig={config.voiceOptions}
-                        iconType="svg"
-                        primaryColor={config.theme.primary}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+        <SwipeableCard
+          onSwipeLeft={() => handleResult(false)}
+          onSwipeRight={() => handleResult(true)}
+          enabled={showAnswer}
+        >
+          <div className="rounded-lg shadow-md overflow-hidden mb-6">
+            {/* Card header with category if available */}
+            {currentCard.category && (
+              <div
+                className="px-4 py-2 text-sm font-medium text-white"
+                style={{ backgroundColor: config.theme.accent }}
+              >
+                {currentCard.category}
+              </div>
+            )}
+
+            {/* Card content - REVERSED: showing English first for speaking practice */}
+            <div className="p-6">
+              <div className="mb-6 text-center">
+                {/* Show translation first (what they need to say) */}
+                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+                  {currentCard.translation}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  {currentLanguage === 'chinese' ? '说出中文' : 'Say in ' + config.name}
+                </p>
+
+                {showAnswer && (
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                      {currentCard.word}
+                    </h3>
+                    {currentCard.pronunciation && (
+                      <p className="text-lg text-gray-600 dark:text-gray-400">
+                        {currentCard.pronunciation}
+                      </p>
+                    )}
+
+                    {/* Add audio button for pronunciation help */}
+                    {speechSupported && (
+                      <div className="mt-4 flex justify-center">
+                        <AudioButton
+                          text={currentCard.word}
+                          size="md"
+                          voiceConfig={config.voiceOptions}
+                          iconType="svg"
+                          primaryColor={config.theme.primary}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </SwipeableCard>
       )}
       
       {/* Actions */}
