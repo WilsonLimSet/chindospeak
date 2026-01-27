@@ -9,9 +9,8 @@ import { usePwa } from "@/shared/contexts/PwaContext";
 import PwaWrapper from "@/shared/components/PwaWrapper";
 import { Flashcard, Category, StreakData, DailyChallenge, DailyActivity } from "@/shared/types";
 import isChinese from 'is-chinese';
-import { PlusCircle, BookOpen, Volume2, Mic, Settings, MessageCircle, Globe, Car } from 'lucide-react';
+import { PlusCircle, Car } from 'lucide-react';
 import Link from 'next/link';
-import LanguageSwitcher from '@/shared/components/LanguageSwitcher';
 import StreakDisplay from '@/shared/components/StreakDisplay';
 import StreakWarningBanner from '@/shared/components/StreakWarningBanner';
 import DailyChallengeCard from '@/shared/components/DailyChallengeCard';
@@ -99,12 +98,10 @@ export default function HomePage() {
       setTimeout(() => setShowNotificationPrompt(true), 2000);
     }
 
-    // Notify about due cards if permission granted
+    // Notify about due cards and streak if permission granted
     if (permission === 'granted') {
       const dueCount = localStorage.getDueCardsCount();
-      if (dueCount > 0) {
-        notifyDueCards(dueCount);
-      }
+      notifyDueCards(dueCount, streak.currentStreak);
     }
   }, [isClient, localStorage, isPwa]);
 
@@ -514,36 +511,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Conversation Feature - Make it prominent */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 p-6 rounded-xl shadow-lg border border-blue-200 dark:border-blue-700">
-          <div className="flex items-center mb-4">
-            <MessageCircle className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">AI Conversation Practice</h2>
-              <p className="text-gray-600 dark:text-gray-400">Practice real conversations with AI in {config.name}</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🎯 Smart Scenarios</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Restaurant orders, directions, shopping, and more</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🧠 Uses Your Vocabulary</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">AI knows your flashcards and adapts conversations</p>
-            </div>
-          </div>
-          
-          <Link href="/converse" className="block">
-            <button className="w-full py-4 px-6 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center text-white"
-              style={{ backgroundColor: config.theme.primary }}>
-              <MessageCircle className="w-6 h-6 mr-3" />
-              Start Conversation Practice
-            </button>
-          </Link>
-        </div>
-
         {/* Drive Mode - Hands-free Learning */}
         <div className="bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-900 dark:to-teal-900 p-6 rounded-xl shadow-lg border border-emerald-200 dark:border-emerald-700">
           <div className="flex items-center mb-4">
@@ -603,115 +570,11 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center">
-                <BookOpen className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Cards</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center">
-                <svg className="w-8 h-8 mr-3" style={{ color: config.theme.secondary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.reviewed}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Reviewed</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center">
-                <svg className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.998 1.998 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.categories}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Categories</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Study Modes</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Link href="/review" className="flex items-center p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-opacity-60 transition-colors group" style={{ borderColor: config.theme.primary + '40' }}>
-                <BookOpen className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" style={{ color: config.theme.primary }} />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Review Cards</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Study with spaced repetition</p>
-                </div>
-              </Link>
-              
-              <Link href="/listen" className="flex items-center p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-opacity-60 transition-colors group" style={{ borderColor: config.theme.primary + '40' }}>
-                <Volume2 className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" style={{ color: config.theme.primary }} />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Listen Mode</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Practice pronunciation</p>
-                </div>
-              </Link>
-              
-              <Link href="/speak" className="flex items-center p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-opacity-60 transition-colors group" style={{ borderColor: config.theme.primary + '40' }}>
-                <Mic className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" style={{ color: config.theme.primary }} />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Speak Mode</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Test your pronunciation</p>
-                </div>
-              </Link>
-              
-              <Link href="/manage" className="flex items-center p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-opacity-60 transition-colors group" style={{ borderColor: config.theme.primary + '40' }}>
-                <Settings className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" style={{ color: config.theme.primary }} />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Manage Cards</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Edit and organize</p>
-                </div>
-              </Link>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          {stats.total > 0 && (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Progress Overview</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Completion Rate</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {stats.total > 0 ? Math.round((stats.reviewed / stats.total) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-300"
-                    style={{
-                      backgroundColor: config.theme.primary,
-                      width: `${stats.total > 0 ? (stats.reviewed / stats.total) * 100 : 0}%`
-                    }}
-                  />
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {stats.reviewed} of {stats.total} cards reviewed
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Activity Heat Map */}
-          {activityHistory.length > 0 && (
-            <ActivityHeatMap
-              activities={activityHistory}
-              primaryColor={config.theme.primary}
-            />
-          )}
+          <ActivityHeatMap
+            activities={activityHistory}
+            primaryColor={config.theme.primary}
+          />
         </div>
       </div>
 

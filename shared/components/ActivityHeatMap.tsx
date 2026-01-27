@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { DailyActivity } from '@/shared/types';
 import DayDetailModal from './DayDetailModal';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ActivityHeatMapProps {
   activities: DailyActivity[];
   primaryColor: string;
 }
+
+// App launch date - only show activity from this date onwards
+const APP_START_DATE = new Date('2026-01-27');
 
 function getIntensityLevel(reviewCount: number): number {
   if (reviewCount === 0) return 0;
@@ -28,124 +32,197 @@ function getIntensityColor(level: number, primaryColor: string): string {
   return colors[level] || colors[0];
 }
 
+function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function formatMonthYear(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 export default function ActivityHeatMap({ activities, primaryColor }: ActivityHeatMapProps) {
   const [selectedDay, setSelectedDay] = useState<DailyActivity | null>(null);
 
-  // Group activities into weeks (7 days each)
-  const weeks: DailyActivity[][] = [];
-  const sortedActivities = [...activities].sort((a, b) => a.date.localeCompare(b.date));
+  // Current month being viewed (default to current month)
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [viewYear, setViewYear] = useState(today.getFullYear());
 
-  // Pad the start to align with day of week
-  const firstDate = sortedActivities.length > 0 ? new Date(sortedActivities[0].date) : new Date();
-  const startPadding = firstDate.getDay(); // 0 = Sunday
+  // Filter activities to only include those from APP_START_DATE onwards
+  const filteredActivities = useMemo(() => {
+    return activities.filter(a => new Date(a.date) >= APP_START_DATE);
+  }, [activities]);
 
-  let currentWeek: DailyActivity[] = [];
+  // Create activity map for quick lookup
+  const activityMap = useMemo(() => {
+    const map = new Map<string, DailyActivity>();
+    filteredActivities.forEach(a => map.set(a.date, a));
+    return map;
+  }, [filteredActivities]);
 
-  // Add padding for alignment
-  for (let i = 0; i < startPadding; i++) {
-    currentWeek.push({ date: '', reviewCount: -1, correctCount: 0 }); // -1 indicates empty cell
-  }
+  // Generate days for the current view month
+  const monthData = useMemo(() => {
+    const daysInMonth = getDaysInMonth(viewYear, viewMonth);
+    const firstDayOfMonth = new Date(viewYear, viewMonth, 1);
+    const startPadding = firstDayOfMonth.getDay(); // 0 = Sunday
 
-  for (const activity of sortedActivities) {
-    currentWeek.push(activity);
-    if (currentWeek.length === 7) {
+    const days: (DailyActivity | null)[] = [];
+
+    // Add padding for alignment
+    for (let i = 0; i < startPadding; i++) {
+      days.push(null);
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(viewYear, viewMonth, day);
+      const dateStr = date.toISOString().split('T')[0];
+
+      // Check if this date is before app start or in the future
+      if (date < APP_START_DATE || date > today) {
+        days.push({ date: dateStr, reviewCount: -1, correctCount: 0 }); // -1 = inactive
+      } else {
+        const activity = activityMap.get(dateStr);
+        days.push(activity || { date: dateStr, reviewCount: 0, correctCount: 0 });
+      }
+    }
+
+    // Group into weeks
+    const weeks: (DailyActivity | null)[][] = [];
+    let currentWeek: (DailyActivity | null)[] = [];
+
+    for (const day of days) {
+      currentWeek.push(day);
+      if (currentWeek.length === 7) {
+        weeks.push(currentWeek);
+        currentWeek = [];
+      }
+    }
+
+    // Add remaining partial week
+    if (currentWeek.length > 0) {
       weeks.push(currentWeek);
-      currentWeek = [];
     }
-  }
 
-  // Add remaining partial week
-  if (currentWeek.length > 0) {
-    weeks.push(currentWeek);
-  }
+    return weeks;
+  }, [viewYear, viewMonth, activityMap, today]);
 
-  // Get month labels
-  const monthLabels: { label: string; weekIndex: number }[] = [];
-  let lastMonth = -1;
-  sortedActivities.forEach((activity, index) => {
-    const date = new Date(activity.date);
-    const month = date.getMonth();
-    if (month !== lastMonth) {
-      const weekIndex = Math.floor((index + startPadding) / 7);
-      monthLabels.push({
-        label: date.toLocaleDateString('en-US', { month: 'short' }),
-        weekIndex
-      });
-      lastMonth = month;
+  // Navigation handlers
+  const canGoBack = viewYear > APP_START_DATE.getFullYear() ||
+    (viewYear === APP_START_DATE.getFullYear() && viewMonth > APP_START_DATE.getMonth());
+
+  const canGoForward = viewYear < today.getFullYear() ||
+    (viewYear === today.getFullYear() && viewMonth < today.getMonth());
+
+  const goToPreviousMonth = () => {
+    if (!canGoBack) return;
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
     }
-  });
+  };
 
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const goToNextMonth = () => {
+    if (!canGoForward) return;
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700">
-      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Activity</h3>
-
-      <div className="overflow-x-auto">
-        {/* Month labels */}
-        <div className="flex mb-1 ml-8">
-          {monthLabels.map((m, i) => (
-            <div
-              key={i}
-              className="text-xs text-gray-400 dark:text-gray-500"
-              style={{
-                marginLeft: i === 0 ? `${m.weekIndex * 14}px` : `${(m.weekIndex - monthLabels[i - 1].weekIndex - 1) * 14}px`,
-                minWidth: '28px'
-              }}
-            >
-              {m.label}
-            </div>
-          ))}
+      {/* Header with navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Activity</h3>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToPreviousMonth}
+            disabled={!canGoBack}
+            className={`p-1 rounded ${canGoBack ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          </button>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[120px] text-center">
+            {formatMonthYear(new Date(viewYear, viewMonth))}
+          </span>
+          <button
+            onClick={goToNextMonth}
+            disabled={!canGoForward}
+            className={`p-1 rounded ${canGoForward ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
+          >
+            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          </button>
         </div>
+      </div>
 
-        <div className="flex">
-          {/* Day labels */}
-          <div className="flex flex-col justify-around mr-1" style={{ height: `${7 * 14 - 2}px` }}>
-            {dayLabels.map((day, i) => (
-              i % 2 === 1 && (
-                <span key={day} className="text-xs text-gray-400 dark:text-gray-500 leading-none">
-                  {day.slice(0, 1)}
-                </span>
-              )
-            ))}
+      {/* Day labels */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {dayLabels.map((day, i) => (
+          <div key={i} className="text-xs text-gray-400 dark:text-gray-500 text-center">
+            {day}
           </div>
+        ))}
+      </div>
 
-          {/* Heat map grid */}
-          <div className="flex gap-[2px]">
-            {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-[2px]">
-                {week.map((day, dayIndex) => {
-                  if (day.reviewCount === -1) {
-                    return <div key={dayIndex} className="w-3 h-3" />;
-                  }
-                  const intensity = getIntensityLevel(day.reviewCount);
-                  return (
-                    <button
-                      key={dayIndex}
-                      className="w-3 h-3 rounded-sm transition-transform hover:scale-125 hover:z-10"
-                      style={{ backgroundColor: getIntensityColor(intensity, primaryColor) }}
-                      onClick={() => setSelectedDay(day)}
-                      title={`${day.date}: ${day.reviewCount} reviews`}
-                    />
-                  );
-                })}
-              </div>
-            ))}
+      {/* Calendar grid */}
+      <div className="space-y-1">
+        {monthData.map((week, weekIndex) => (
+          <div key={weekIndex} className="grid grid-cols-7 gap-1">
+            {week.map((day, dayIndex) => {
+              if (day === null) {
+                // Padding cell
+                return <div key={dayIndex} className="w-full aspect-square" />;
+              }
+
+              if (day.reviewCount === -1) {
+                // Inactive cell (before app start or future)
+                return (
+                  <div
+                    key={dayIndex}
+                    className="w-full aspect-square rounded-sm bg-gray-100 dark:bg-gray-700 opacity-30"
+                  />
+                );
+              }
+
+              const intensity = getIntensityLevel(day.reviewCount);
+              const dayNumber = new Date(day.date).getDate();
+
+              return (
+                <button
+                  key={dayIndex}
+                  className="w-full aspect-square rounded-sm transition-transform hover:scale-110 hover:z-10 relative flex items-center justify-center"
+                  style={{ backgroundColor: getIntensityColor(intensity, primaryColor) }}
+                  onClick={() => setSelectedDay(day)}
+                  title={`${day.date}: ${day.reviewCount} reviews`}
+                >
+                  <span className={`text-xs ${intensity >= 3 ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`}>
+                    {dayNumber}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Legend */}
-        <div className="flex items-center justify-end gap-1 mt-3">
-          <span className="text-xs text-gray-400 dark:text-gray-500 mr-1">Less</span>
-          {[0, 1, 2, 3, 4].map(level => (
-            <div
-              key={level}
-              className="w-3 h-3 rounded-sm"
-              style={{ backgroundColor: getIntensityColor(level, primaryColor) }}
-            />
-          ))}
-          <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">More</span>
-        </div>
+      {/* Legend */}
+      <div className="flex items-center justify-end gap-1 mt-3">
+        <span className="text-xs text-gray-400 dark:text-gray-500 mr-1">Less</span>
+        {[0, 1, 2, 3, 4].map(level => (
+          <div
+            key={level}
+            className="w-3 h-3 rounded-sm"
+            style={{ backgroundColor: getIntensityColor(level, primaryColor) }}
+          />
+        ))}
+        <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">More</span>
       </div>
 
       <DayDetailModal
