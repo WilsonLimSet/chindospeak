@@ -97,10 +97,13 @@ export default function ReviewPage() {
   
   const handleResult = (successful: boolean) => {
     if (!currentCard) return;
-    
+
     // Update reading review level using spaced repetition
     localStorage.updateReadingReviewLevel(currentCard.id, successful);
-    
+
+    // Update daily challenge progress
+    localStorage.updateChallengeProgress(1, 'review_count');
+
     setReviewedCards(prev => new Set(prev).add(currentCard.id));
     
     if (!successful) {

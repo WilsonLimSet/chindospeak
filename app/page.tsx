@@ -7,11 +7,19 @@ import { UnifiedTranslationService } from "@/shared/utils/translationService";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { usePwa } from "@/shared/contexts/PwaContext";
 import PwaWrapper from "@/shared/components/PwaWrapper";
-import { Flashcard, Category } from "@/shared/types";
+import { Flashcard, Category, StreakData, DailyChallenge, DailyActivity } from "@/shared/types";
 import isChinese from 'is-chinese';
 import { PlusCircle, BookOpen, Volume2, Mic, Settings, MessageCircle, Globe, Car } from 'lucide-react';
 import Link from 'next/link';
 import LanguageSwitcher from '@/shared/components/LanguageSwitcher';
+import StreakDisplay from '@/shared/components/StreakDisplay';
+import StreakWarningBanner from '@/shared/components/StreakWarningBanner';
+import DailyChallengeCard from '@/shared/components/DailyChallengeCard';
+import ChallengeCompletionModal from '@/shared/components/ChallengeCompletionModal';
+import ActivityHeatMap from '@/shared/components/ActivityHeatMap';
+import NotificationPermissionPrompt from '@/shared/components/NotificationPermissionPrompt';
+import { generateDailyChallenge } from '@/shared/utils/challengeGenerator';
+import { notifyDueCards, getNotificationPermission } from '@/shared/utils/notificationUtils';
 
 export default function HomePage() {
   const { config, service, currentLanguage, switchLanguage, availableLanguages } = useLanguage();
@@ -30,6 +38,14 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [stats, setStats] = useState({ total: 0, reviewed: 0, categories: 0 });
   const [isClient, setIsClient] = useState(false);
+
+  // Engagement features state
+  const [streakData, setStreakData] = useState<StreakData | null>(null);
+  const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(null);
+  const [activityHistory, setActivityHistory] = useState<DailyActivity[]>([]);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [previousChallengeCompleted, setPreviousChallengeCompleted] = useState(false);
   
   // Only create localStorage instance after client-side hydration
   const localStorage = useMemo(() => {
@@ -42,13 +58,13 @@ export default function HomePage() {
     setIsClient(true);
   }, []);
 
-  // Load categories and stats on component mount and when language changes
+  // Load categories, stats, and engagement data on component mount and when language changes
   useEffect(() => {
     if (!isClient || !localStorage) return;
-    
+
     const loadedCategories = localStorage.getCategories();
     setCategories(loadedCategories);
-    
+
     const allCards = localStorage.getFlashcards();
     const reviewedCards = allCards.filter(card => card.reviewHistory && card.reviewHistory.length > 0).length;
     setStats({
@@ -56,7 +72,41 @@ export default function HomePage() {
       reviewed: reviewedCards,
       categories: loadedCategories.length
     });
-  }, [isClient, localStorage]);
+
+    // Load engagement data
+    const streak = localStorage.getStreakData();
+    setStreakData(streak);
+
+    // Load or generate daily challenge
+    const today = new Date().toISOString().split('T')[0];
+    let challenge = localStorage.getDailyChallenge();
+    if (!challenge || challenge.date !== today) {
+      challenge = generateDailyChallenge(today, allCards.length);
+      localStorage.saveDailyChallenge(challenge);
+    }
+    setDailyChallenge(challenge);
+    setPreviousChallengeCompleted(challenge.completed);
+
+    // Load activity history for heat map
+    const activities = localStorage.getActivityHistory(90);
+    setActivityHistory(activities);
+
+    // Check notification permission and show prompt if needed
+    const notifSettings = localStorage.getNotificationSettings();
+    const permission = getNotificationPermission();
+    if (isPwa && permission === 'default' && !notifSettings.lastPromptDate) {
+      // Show prompt after a short delay
+      setTimeout(() => setShowNotificationPrompt(true), 2000);
+    }
+
+    // Notify about due cards if permission granted
+    if (permission === 'granted') {
+      const dueCount = localStorage.getDueCardsCount();
+      if (dueCount > 0) {
+        notifyDueCards(dueCount);
+      }
+    }
+  }, [isClient, localStorage, isPwa]);
 
   // Validate input based on language
   const isValidLanguageInput = useCallback((text: string): boolean => {
@@ -199,14 +249,56 @@ export default function HomePage() {
   };
 
   const getInputLabel = () => {
-    return currentLanguage === 'chinese' 
+    return currentLanguage === 'chinese'
       ? "Enter Chinese Word or Phrase"
       : "Enter Indonesian Word or Phrase";
+  };
+
+  // Handle challenge completion modal
+  useEffect(() => {
+    if (dailyChallenge?.completed && !previousChallengeCompleted) {
+      setShowChallengeModal(true);
+      setPreviousChallengeCompleted(true);
+    }
+  }, [dailyChallenge?.completed, previousChallengeCompleted]);
+
+  const handleNotificationPermissionGranted = () => {
+    if (!localStorage) return;
+    localStorage.saveNotificationSettings({
+      enabled: true,
+      permissionGranted: true,
+      lastPromptDate: new Date().toISOString()
+    });
+    setShowNotificationPrompt(false);
+  };
+
+  const handleNotificationDismiss = () => {
+    if (!localStorage) return;
+    localStorage.saveNotificationSettings({
+      enabled: false,
+      permissionGranted: false,
+      lastPromptDate: new Date().toISOString()
+    });
+    setShowNotificationPrompt(false);
   };
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
       <div className="space-y-6">
+        {/* Streak Warning Banner */}
+        {streakData && (
+          <StreakWarningBanner streakData={streakData} />
+        )}
+
+        {/* Notification Permission Prompt */}
+        {showNotificationPrompt && (
+          <NotificationPermissionPrompt
+            onPermissionGranted={handleNotificationPermissionGranted}
+            onDismiss={handleNotificationDismiss}
+            primaryColor={config.theme.primary}
+          />
+        )}
+
         {/* Create Form Section */}
         <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
           <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
@@ -498,6 +590,19 @@ export default function HomePage() {
 
         {/* Overview Section */}
         <div className="space-y-6">
+          {/* Streak and Daily Challenge */}
+          {streakData && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <StreakDisplay streakData={streakData} primaryColor={config.theme.primary} />
+              {dailyChallenge && (
+                <DailyChallengeCard
+                  challenge={dailyChallenge}
+                  primaryColor={config.theme.primary}
+                />
+              )}
+            </div>
+          )}
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
@@ -585,9 +690,9 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
+                  <div
                     className="h-2 rounded-full transition-all duration-300"
-                    style={{ 
+                    style={{
                       backgroundColor: config.theme.primary,
                       width: `${stats.total > 0 ? (stats.reviewed / stats.total) * 100 : 0}%`
                     }}
@@ -599,8 +704,23 @@ export default function HomePage() {
               </div>
             </div>
           )}
+
+          {/* Activity Heat Map */}
+          {activityHistory.length > 0 && (
+            <ActivityHeatMap
+              activities={activityHistory}
+              primaryColor={config.theme.primary}
+            />
+          )}
         </div>
       </div>
+
+      {/* Challenge Completion Modal */}
+      <ChallengeCompletionModal
+        isOpen={showChallengeModal}
+        onClose={() => setShowChallengeModal(false)}
+        primaryColor={config.theme.primary}
+      />
     </div>
   );
 }

@@ -88,10 +88,13 @@ export default function SpeakPage() {
   
   const handleResult = (successful: boolean) => {
     if (!currentCard) return;
-    
+
     // Update speaking review level using spaced repetition
     localStorage.updateSpeakingReviewLevel(currentCard.id, successful);
-    
+
+    // Update daily challenge progress
+    localStorage.updateChallengeProgress(1, 'speaking_practice');
+
     setReviewedCards(prev => new Set(prev).add(currentCard.id));
     
     if (!successful) {

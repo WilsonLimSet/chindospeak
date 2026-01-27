@@ -107,10 +107,13 @@ export default function ListenPage() {
   
   const handleResult = (successful: boolean) => {
     if (!currentCard) return;
-    
+
     // Update listening review level using spaced repetition
     localStorage.updateListeningReviewLevel(currentCard.id, successful);
-    
+
+    // Update daily challenge progress
+    localStorage.updateChallengeProgress(1, 'listening_practice');
+
     setReviewedCards(prev => new Set(prev).add(currentCard.id));
     
     if (!successful) {

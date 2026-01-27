@@ -160,3 +160,36 @@ export interface AppConfig {
     spacedRepetition: boolean;
   };
 }
+
+// Engagement Features Types
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastReviewDate: string | null;
+  hasReviewedToday: boolean;
+}
+
+export type ChallengeType = 'review_count' | 'correct_streak' | 'listening_practice' | 'speaking_practice';
+
+export interface DailyChallenge {
+  id: string;
+  type: ChallengeType;
+  targetValue: number;
+  currentValue: number;
+  date: string; // YYYY-MM-DD
+  completed: boolean;
+  completedAt?: string;
+}
+
+export interface DailyActivity {
+  date: string; // YYYY-MM-DD
+  reviewCount: number;
+  correctCount: number;
+}
+
+export interface NotificationSettings {
+  enabled: boolean;
+  permissionGranted: boolean;
+  lastPromptDate: string | null;
+}

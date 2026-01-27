@@ -1,6 +1,6 @@
 // Unified localStorage utilities for language learning apps
 
-import { Flashcard, ReviewSession, Category } from '@/shared/types';
+import { Flashcard, ReviewSession, Category, StreakData, DailyChallenge, DailyActivity, NotificationSettings } from '@/shared/types';
 
 export class UnifiedLocalStorage {
   private prefix: string;
@@ -434,6 +434,148 @@ export class UnifiedLocalStorage {
     const flashcards = this.getFlashcards();
     const today = new Date().toISOString().split('T')[0];
     return flashcards.filter(card => card.speakingNextReviewDate <= today);
+  }
+
+  // Engagement Features
+
+  // Streak tracking
+  getStreakData(): StreakData {
+    const flashcards = this.getFlashcards();
+    const allReviews = flashcards.flatMap(card => card.reviewHistory);
+    const today = new Date().toDateString();
+
+    const currentStreak = this.calculateStreakDays(allReviews);
+
+    const hasReviewedToday = allReviews.some(
+      session => new Date(session.reviewedAt).toDateString() === today
+    );
+
+    // Get last review date
+    const sortedReviews = [...allReviews].sort(
+      (a, b) => new Date(b.reviewedAt).getTime() - new Date(a.reviewedAt).getTime()
+    );
+    const lastReviewDate = sortedReviews.length > 0
+      ? new Date(sortedReviews[0].reviewedAt).toISOString().split('T')[0]
+      : null;
+
+    // Track longest streak
+    const storedLongest = this.getSetting('longestStreak', 0);
+    if (currentStreak > storedLongest) {
+      this.setSetting('longestStreak', currentStreak);
+    }
+
+    return {
+      currentStreak,
+      longestStreak: Math.max(currentStreak, storedLongest),
+      lastReviewDate,
+      hasReviewedToday
+    };
+  }
+
+  // Daily Challenge
+  getDailyChallenge(): DailyChallenge | null {
+    try {
+      const stored = localStorage.getItem(this.getKey('dailyChallenge'));
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  saveDailyChallenge(challenge: DailyChallenge): void {
+    try {
+      localStorage.setItem(this.getKey('dailyChallenge'), JSON.stringify(challenge));
+    } catch (error) {
+      console.error('Error saving daily challenge:', error);
+    }
+  }
+
+  updateChallengeProgress(increment: number, type?: string): void {
+    const challenge = this.getDailyChallenge();
+    if (!challenge || challenge.completed) return;
+
+    // Only update if the activity matches the challenge type
+    if (type && challenge.type !== type && challenge.type !== 'review_count') return;
+
+    challenge.currentValue += increment;
+
+    if (challenge.currentValue >= challenge.targetValue) {
+      challenge.completed = true;
+      challenge.completedAt = new Date().toISOString();
+    }
+
+    this.saveDailyChallenge(challenge);
+  }
+
+  // Activity History for Heat Map
+  getActivityHistory(days: number = 90): DailyActivity[] {
+    const flashcards = this.getFlashcards();
+    const activityMap = new Map<string, DailyActivity>();
+
+    // Initialize dates for the range
+    const today = new Date();
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      activityMap.set(dateStr, {
+        date: dateStr,
+        reviewCount: 0,
+        correctCount: 0
+      });
+    }
+
+    // Aggregate reviews
+    for (const card of flashcards) {
+      for (const session of card.reviewHistory) {
+        const sessionDate = new Date(session.reviewedAt).toISOString().split('T')[0];
+        const activity = activityMap.get(sessionDate);
+
+        if (activity) {
+          activity.reviewCount++;
+          if (session.wasCorrect) activity.correctCount++;
+        }
+      }
+    }
+
+    // Convert to sorted array (oldest first)
+    return Array.from(activityMap.values()).sort(
+      (a, b) => a.date.localeCompare(b.date)
+    );
+  }
+
+  // Due cards count for notifications
+  getDueCardsCount(): number {
+    const reading = this.getFlashcardsForReadingReview().length;
+    const listening = this.getFlashcardsForListeningReview().length;
+    const speaking = this.getFlashcardsForSpeakingReview().length;
+    return reading + listening + speaking;
+  }
+
+  // Notification settings
+  getNotificationSettings(): NotificationSettings {
+    try {
+      const stored = localStorage.getItem(this.getKey('notificationSettings'));
+      return stored ? JSON.parse(stored) : {
+        enabled: false,
+        permissionGranted: false,
+        lastPromptDate: null
+      };
+    } catch {
+      return {
+        enabled: false,
+        permissionGranted: false,
+        lastPromptDate: null
+      };
+    }
+  }
+
+  saveNotificationSettings(settings: NotificationSettings): void {
+    try {
+      localStorage.setItem(this.getKey('notificationSettings'), JSON.stringify(settings));
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
+    }
   }
 
   // Clear all data
