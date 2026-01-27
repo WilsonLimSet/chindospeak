@@ -107,7 +107,19 @@ export interface AudioState {
   error: string | null;
 }
 
-export type ReviewMode = 'listen' | 'speak' | 'review' | 'create' | 'manage' | 'converse';
+export type ReviewMode = 'listen' | 'speak' | 'review' | 'create' | 'manage' | 'converse' | 'drive';
+
+// Drive Mode types
+export type DriveQuizState =
+  | 'idle'
+  | 'speaking_prompt'
+  | 'listening'
+  | 'validating'
+  | 'speaking_feedback'
+  | 'error'
+  | 'finished';
+
+export type DriveQuizDirection = 'translation_to_word' | 'word_to_translation' | 'mixed';
 
 export interface ConversationSession {
   id: string;

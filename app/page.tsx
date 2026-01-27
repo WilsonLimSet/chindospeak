@@ -9,7 +9,7 @@ import { usePwa } from "@/shared/contexts/PwaContext";
 import PwaWrapper from "@/shared/components/PwaWrapper";
 import { Flashcard, Category } from "@/shared/types";
 import isChinese from 'is-chinese';
-import { PlusCircle, BookOpen, Volume2, Mic, Settings, MessageCircle, Globe } from 'lucide-react';
+import { PlusCircle, BookOpen, Volume2, Mic, Settings, MessageCircle, Globe, Car } from 'lucide-react';
 import Link from 'next/link';
 import LanguageSwitcher from '@/shared/components/LanguageSwitcher';
 
@@ -448,6 +448,50 @@ export default function HomePage() {
               style={{ backgroundColor: config.theme.primary }}>
               <MessageCircle className="w-6 h-6 mr-3" />
               Start Conversation Practice
+            </button>
+          </Link>
+        </div>
+
+        {/* Drive Mode - Hands-free Learning */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-900 dark:to-teal-900 p-6 rounded-xl shadow-lg border border-emerald-200 dark:border-emerald-700">
+          <div className="flex items-center mb-4">
+            <Car className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} />
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {currentLanguage === 'chinese' ? '驾驶模式' : 'Drive Mode'}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                {currentLanguage === 'chinese'
+                  ? '开车时也能学习，完全免提'
+                  : 'Learn while driving, completely hands-free'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🎧 Audio Quiz Loop</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {currentLanguage === 'chinese'
+                  ? '自动出题、听取回答、给出反馈'
+                  : 'Auto asks, listens, and gives feedback'}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🚗 No Screen Needed</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {currentLanguage === 'chinese'
+                  ? '点击开始后无需触碰屏幕'
+                  : 'Tap once to start, then just listen and speak'}
+              </p>
+            </div>
+          </div>
+
+          <Link href="/drive" className="block">
+            <button className="w-full py-4 px-6 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center text-white"
+              style={{ backgroundColor: config.theme.primary }}>
+              <Car className="w-6 h-6 mr-3" />
+              {currentLanguage === 'chinese' ? '开始驾驶模式' : 'Start Drive Mode'}
             </button>
           </Link>
         </div>

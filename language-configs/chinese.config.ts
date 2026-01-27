@@ -58,7 +58,8 @@ export const chineseConfig: BaseLanguageConfig = {
       speak: '说',
       review: '复习',
       create: '创建',
-      manage: '管理'
+      manage: '管理',
+      drive: '驾驶'
     },
     buttons: {
       play: '播放',

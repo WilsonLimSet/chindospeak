@@ -10,6 +10,7 @@ export interface BaseLanguageConfig extends LanguageConfig {
       review: string;
       create: string;
       manage: string;
+      drive?: string;
     };
     buttons: {
       play: string;
