@@ -107,7 +107,7 @@ export interface AudioState {
   error: string | null;
 }
 
-export type ReviewMode = 'listen' | 'speak' | 'review' | 'create' | 'manage' | 'converse' | 'drive';
+export type ReviewMode = 'listen' | 'speak' | 'review' | 'create' | 'manage' | 'drive';
 
 // Drive Mode types
 export type DriveQuizState =
@@ -120,36 +120,6 @@ export type DriveQuizState =
   | 'finished';
 
 export type DriveQuizDirection = 'translation_to_word' | 'word_to_translation' | 'mixed';
-
-export interface ConversationSession {
-  id: string;
-  language: 'chinese' | 'indonesian';
-  scenario: string; // 'restaurant', 'directions', 'shopping', 'general'
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  userVocab: Flashcard[]; // Known words from flashcards
-  messages: ConversationMessage[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ConversationMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  pronunciation?: string;
-  translation?: string;
-  newWords?: string[]; // Words to add to flashcards
-  timestamp: Date;
-}
-
-export interface ConversationScenario {
-  id: string;
-  name: string;
-  description: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  systemPrompt: string;
-  icon: string;
-}
 
 export interface AppConfig {
   language: LanguageConfig;

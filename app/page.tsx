@@ -178,8 +178,7 @@ export default function HomePage() {
       }
       
       setTranslation(translationData);
-    } catch (err) {
-      console.error("Translation error:", err);
+    } catch {
       setError("Failed to translate. Please try again later.");
     } finally {
       setIsLoading(false);

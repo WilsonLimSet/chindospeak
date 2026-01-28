@@ -264,8 +264,7 @@ export default function ManagePage() {
         
         // Reset the file input
         event.target.value = '';
-      } catch (error) {
-        console.error('Import error:', error);
+      } catch {
         alert('Error importing file. Please make sure it\'s a valid flashcards export file.');
         event.target.value = '';
       }

@@ -171,7 +171,6 @@ export default function DrivePage() {
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
       handleRecognitionError(event.error);
     };
 
@@ -182,8 +181,7 @@ export default function DrivePage() {
     try {
       recognition.start();
       setQuizState('listening');
-    } catch (e) {
-      console.error('Recognition start error:', e);
+    } catch {
       handleRecognitionError('start-failed');
     }
   }, [currentLanguage, initRecognition]);
@@ -236,8 +234,8 @@ export default function DrivePage() {
 
     try {
       await audioService.speak(feedbackText, 0.9, 1);
-    } catch (e) {
-      console.error('TTS error:', e);
+    } catch {
+      // TTS failed silently
     }
 
     // Handle card queue
@@ -289,8 +287,8 @@ export default function DrivePage() {
 
     try {
       await audioService.speak(feedbackText, 0.9, 1);
-    } catch (e) {
-      console.error('TTS error:', e);
+    } catch {
+      // TTS failed silently
     }
 
     // Handle card queue
@@ -327,8 +325,8 @@ export default function DrivePage() {
 
       try {
         await audioService.speak(skipMessage, 0.9, 1);
-      } catch (e) {
-        console.error('TTS error:', e);
+      } catch {
+        // TTS failed silently
       }
 
       // Move card to back
@@ -350,8 +348,8 @@ export default function DrivePage() {
 
       try {
         await audioService.speak(retryMessage, 0.9, 1);
-      } catch (e) {
-        console.error('TTS error:', e);
+      } catch {
+        // TTS failed silently
       }
 
       // Wait a moment then listen again
@@ -379,8 +377,8 @@ export default function DrivePage() {
 
       try {
         await audioService.speak(completeMessage, 0.9, 1);
-      } catch (e) {
-        console.error('TTS error:', e);
+      } catch {
+        // TTS failed silently
       }
 
       wakeLock.release();
@@ -407,8 +405,8 @@ export default function DrivePage() {
 
     try {
       await audioService.speak(prompt, 0.9, 1);
-    } catch (e) {
-      console.error('TTS error:', e);
+    } catch {
+      // TTS failed silently
     }
 
     if (!isRunningRef.current) return;
@@ -454,8 +452,8 @@ export default function DrivePage() {
 
       try {
         await audioService.speak(noCardsMessage, 0.9, 1);
-      } catch (e) {
-        console.error('TTS error:', e);
+      } catch {
+        // TTS failed silently
       }
       return;
     }
@@ -494,8 +492,8 @@ export default function DrivePage() {
 
     try {
       await audioService.speak(prompt, 0.9, 1);
-    } catch (e) {
-      console.error('TTS error:', e);
+    } catch {
+      // TTS failed silently
     }
 
     if (!isRunningRef.current) return;

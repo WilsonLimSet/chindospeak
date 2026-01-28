@@ -18,8 +18,7 @@ export class UnifiedLocalStorage {
     try {
       const stored = localStorage.getItem(this.getKey('flashcards'));
       return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Error loading flashcards:', error);
+    } catch {
       return [];
     }
   }
@@ -27,8 +26,8 @@ export class UnifiedLocalStorage {
   saveFlashcards(flashcards: Flashcard[]): void {
     try {
       localStorage.setItem(this.getKey('flashcards'), JSON.stringify(flashcards));
-    } catch (error) {
-      console.error('Error saving flashcards:', error);
+    } catch {
+      // Save failed silently
     }
   }
 
@@ -75,8 +74,7 @@ export class UnifiedLocalStorage {
     try {
       const stored = localStorage.getItem(this.getKey('categories'));
       return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Error loading categories:', error);
+    } catch {
       return [];
     }
   }
@@ -84,8 +82,8 @@ export class UnifiedLocalStorage {
   saveCategories(categories: Category[]): void {
     try {
       localStorage.setItem(this.getKey('categories'), JSON.stringify(categories));
-    } catch (error) {
-      console.error('Error saving categories:', error);
+    } catch {
+      // Save failed silently
     }
   }
 
@@ -219,8 +217,7 @@ export class UnifiedLocalStorage {
     try {
       const stored = localStorage.getItem(this.getKey('settings'));
       return stored ? JSON.parse(stored) : {};
-    } catch (error) {
-      console.error('Error loading app settings:', error);
+    } catch {
       return {};
     }
   }
@@ -228,8 +225,8 @@ export class UnifiedLocalStorage {
   saveAppSettings(settings: Record<string, any>): void {
     try {
       localStorage.setItem(this.getKey('settings'), JSON.stringify(settings));
-    } catch (error) {
-      console.error('Error saving app settings:', error);
+    } catch {
+      // Save failed silently
     }
   }
 
@@ -285,17 +282,10 @@ export class UnifiedLocalStorage {
         // Transform legacy format to ChindoSpeak format
         const transformedFlashcards = data.flashcards.map((card: any) => {
           const today = new Date().toISOString().split('T')[0];
-          
-          // Debug logging
-          console.log('Importing card:', card);
-          console.log('Card has text field:', card.text);
-          console.log('Card has word field:', card.word);
-          console.log('Card has chinese field:', card.chinese);
-          
+
           // Handle Indonesian format with text/translation fields
           const wordValue = card.text || card.chinese || card.word || '';
-          console.log('Word will be set to:', wordValue);
-          
+
           const transformedCard = {
             id: card.id || crypto.randomUUID(),
             word: wordValue,
@@ -323,7 +313,6 @@ export class UnifiedLocalStorage {
             speakingDifficulty: 1
           };
           
-          console.log('Transformed to:', transformedCard);
           return transformedCard;
         });
         
@@ -339,7 +328,6 @@ export class UnifiedLocalStorage {
         const mergedFlashcards = Array.from(existingCardsMap.values());
         
         this.saveFlashcards(mergedFlashcards);
-        console.log(`Imported ${transformedFlashcards.length} flashcards, total: ${mergedFlashcards.length}`);
       }
       
       if (data.settings && typeof data.settings === 'object') {
@@ -347,8 +335,7 @@ export class UnifiedLocalStorage {
       }
       
       return { success: true, message: 'Data imported successfully' };
-    } catch (error) {
-      console.error('Error importing data:', error);
+    } catch {
       return { success: false, message: 'Invalid data format' };
     }
   }
@@ -485,8 +472,8 @@ export class UnifiedLocalStorage {
   saveDailyChallenge(challenge: DailyChallenge): void {
     try {
       localStorage.setItem(this.getKey('dailyChallenge'), JSON.stringify(challenge));
-    } catch (error) {
-      console.error('Error saving daily challenge:', error);
+    } catch {
+      // Save failed silently
     }
   }
 
@@ -573,8 +560,8 @@ export class UnifiedLocalStorage {
   saveNotificationSettings(settings: NotificationSettings): void {
     try {
       localStorage.setItem(this.getKey('notificationSettings'), JSON.stringify(settings));
-    } catch (error) {
-      console.error('Error saving notification settings:', error);
+    } catch {
+      // Save failed silently
     }
   }
 

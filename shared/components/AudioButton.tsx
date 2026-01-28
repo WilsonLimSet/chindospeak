@@ -56,9 +56,8 @@ export default function AudioButton({
 
     try {
       await audioService.speak(text, 0.9, 1);
-    } catch (err) {
+    } catch {
       setError('Speech failed');
-      console.error('Speech error:', err);
     } finally {
       setIsPlayingInternal(false);
       if (onPlayStateChange) onPlayStateChange(false);

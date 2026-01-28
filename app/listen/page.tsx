@@ -10,6 +10,8 @@ import { Flashcard } from "@/shared/types";
 import Link from "next/link";
 import { playCorrect, playIncorrect } from "@/shared/utils/soundEffects";
 import SwipeableCard from "@/shared/components/SwipeableCard";
+import CategoryFilterModal from "@/shared/components/CategoryFilterModal";
+import FilterButton from "@/shared/components/FilterButton";
 
 export default function ListenPage() {
   const { config, currentLanguage } = useLanguage();
@@ -92,8 +94,8 @@ export default function ListenPage() {
         try {
           setIsPlaying(true);
           await audioService.speak(currentCard.word, 0.9, 1);
-        } catch (error) {
-          console.error("Error playing audio:", error);
+        } catch {
+          // Audio playback failed silently
         } finally {
           setIsPlaying(false);
         }
@@ -169,100 +171,6 @@ export default function ListenPage() {
     setAutoPlayEnabled(!autoPlayEnabled);
   };
   
-  const renderCategoryFilterModal = () => {
-    if (!showCategoryFilter) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
-          <h2 className="text-xl font-bold mb-4 text-black dark:text-white">
-            {currentLanguage === 'chinese' ? '按类别筛选' : 'Filter by Category'}
-          </h2>
-          
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-2 mb-4">
-              <button
-                onClick={() => {
-                  setSelectedCategory(undefined);
-                  setShowCategoryFilter(false);
-                }}
-                className={`px-3 py-2 rounded-md text-sm ${
-                  selectedCategory === undefined
-                    ? 'text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-                style={{
-                  backgroundColor: selectedCategory === undefined ? config.theme.primary : undefined
-                }}
-              >
-                All Categories
-              </button>
-              
-              <button
-                onClick={() => {
-                  setSelectedCategory(null);
-                  setShowCategoryFilter(false);
-                }}
-                className={`px-3 py-2 rounded-md text-sm ${
-                  selectedCategory === null
-                    ? 'text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-                style={{
-                  backgroundColor: selectedCategory === null ? config.theme.primary : undefined
-                }}
-              >
-                No Category
-              </button>
-              
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    setShowCategoryFilter(false);
-                  }}
-                  className={`px-3 py-2 rounded-md text-sm ${
-                    selectedCategory === category
-                      ? 'text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-                  }`}
-                  style={{
-                    backgroundColor: selectedCategory === category ? config.theme.primary : undefined
-                  }}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <button
-              onClick={() => setShowCategoryFilter(false)}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-black dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
-            >
-              {config.ui.buttons.cancel}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderFilterButton = () => {
-    return (
-      <button
-        onClick={toggleCategoryFilter}
-        className="flex items-center justify-center px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-black dark:text-white text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-        </svg>
-        Filter
-      </button>
-    );
-  };
 
   const renderAutoPlayToggle = () => {
     return (
@@ -353,7 +261,7 @@ export default function ListenPage() {
       <div className="flex justify-between mb-6">
         <div className="flex space-x-2">
           {renderAutoPlayToggle()}
-          {renderFilterButton()}
+          <FilterButton onClick={toggleCategoryFilter} />
         </div>
       </div>
       
@@ -487,7 +395,13 @@ export default function ListenPage() {
         </div>
       )}
       
-      {renderCategoryFilterModal()}
+      <CategoryFilterModal
+        isOpen={showCategoryFilter}
+        onClose={() => setShowCategoryFilter(false)}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+      />
     </div>
   );
 }

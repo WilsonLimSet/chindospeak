@@ -105,9 +105,8 @@ export class UnifiedAudioService {
         resolve();
       };
 
-      utterance.onerror = (event) => {
+      utterance.onerror = () => {
         this.currentUtterance = null;
-        console.error('Speech synthesis error:', event);
         reject(new Error('Speech synthesis failed'));
       };
 
