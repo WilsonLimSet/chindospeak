@@ -7,7 +7,7 @@ import InstallPrompt from './components/InstallPrompt';
 import InstallInstructions from './components/InstallInstructions';
 import ConditionalFloatingLanguageSwitcher from '@/shared/components/ConditionalFloatingLanguageSwitcher';
 import DynamicThemeColor from '@/shared/components/DynamicThemeColor';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from '@vercel/analytics/next';
 import { PwaProvider } from '@/shared/contexts/PwaContext';
 import { LanguageProvider } from '@/shared/contexts/LanguageContext';
 

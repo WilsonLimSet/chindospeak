@@ -23,6 +23,17 @@ import { notifyDueCards, getNotificationPermission } from '@/shared/utils/notifi
 function LandingPage() {
   const { config } = useLanguage();
   const { showInstallPrompt } = usePwa();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -30,6 +41,13 @@ function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
           {/* Left side - Text content */}
           <div>
+            {/* Logo */}
+            <img
+              src="/icons/icon-512x512.png"
+              alt="ChindoSpeak"
+              className="w-20 h-20 mb-6 rounded-2xl"
+            />
+
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
               ChindoSpeak
             </h1>
@@ -49,18 +67,30 @@ function LandingPage() {
               </div>
             </div>
 
-            {/* CTA */}
-            <button
-              onClick={showInstallPrompt}
-              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:opacity-90 text-white mb-4"
-              style={{ backgroundColor: config.theme.primary }}
-            >
-              Add to Home Screen
-            </button>
-
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Free PWA · Works offline · No account needed
-            </p>
+            {/* CTA - different for mobile vs desktop */}
+            {isMobile ? (
+              <>
+                <button
+                  onClick={showInstallPrompt}
+                  className="px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:opacity-90 text-white mb-4"
+                  style={{ backgroundColor: config.theme.primary }}
+                >
+                  Add to Home Screen
+                </button>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Free PWA · Works offline · No account needed
+                </p>
+              </>
+            ) : (
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 inline-block">
+                <p className="text-gray-700 dark:text-gray-300 font-medium">
+                  Open on mobile to install as an app
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Free PWA · Works offline · No account needed
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Right side - Feature preview */}
