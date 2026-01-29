@@ -8,7 +8,7 @@ import { usePwa } from "@/shared/contexts/PwaContext";
 import PwaWrapper from "@/shared/components/PwaWrapper";
 import { Flashcard, Category, StreakData, DailyChallenge, DailyActivity } from "@/shared/types";
 import isChinese from 'is-chinese';
-import { PlusCircle, Car, Headphones, Mic, BookOpen, Smartphone, Volume2, Zap } from 'lucide-react';
+import { PlusCircle, Car, Headphones, Mic, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import StreakDisplay from '@/shared/components/StreakDisplay';
 import StreakWarningBanner from '@/shared/components/StreakWarningBanner';
@@ -21,196 +21,103 @@ import { notifyDueCards, getNotificationPermission } from '@/shared/utils/notifi
 
 // Landing page for web visitors
 function LandingPage() {
-  const { config, availableLanguages } = useLanguage();
+  const { config } = useLanguage();
   const { showInstallPrompt } = usePwa();
 
-  const features = [
-    {
-      icon: <Car className="w-8 h-8" />,
-      title: "Drive Mode",
-      description: "Learn hands-free while commuting. Audio quiz loop with voice recognition."
-    },
-    {
-      icon: <Headphones className="w-8 h-8" />,
-      title: "Listening Practice",
-      description: "Train your ear with audio flashcards and spaced repetition."
-    },
-    {
-      icon: <Mic className="w-8 h-8" />,
-      title: "Speaking Practice",
-      description: "Practice pronunciation with instant feedback."
-    },
-    {
-      icon: <BookOpen className="w-8 h-8" />,
-      title: "Smart Flashcards",
-      description: "Create and review flashcards with spaced repetition for optimal retention."
-    },
-    {
-      icon: <Zap className="w-8 h-8" />,
-      title: "Daily Challenges",
-      description: "Stay motivated with streaks, challenges, and progress tracking."
-    },
-    {
-      icon: <Smartphone className="w-8 h-8" />,
-      title: "Works Offline",
-      description: "Install as an app and learn anywhere, even without internet."
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16 max-w-4xl">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Learn Chinese & Indonesian
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-2">
-            The language app that works while you drive
-          </p>
-          <p className="text-gray-500 dark:text-gray-400 mb-8">
-            Hands-free audio quizzes • Spaced repetition • Offline support
-          </p>
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="container mx-auto px-6 py-12 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+          {/* Left side - Text content */}
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+              ChindoSpeak
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+              Learn Chinese and Indonesian with hands-free audio quizzes. Practice while you drive, commute, or walk.
+            </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {/* Languages */}
+            <div className="flex gap-6 mb-8">
+              <div>
+                <p className="text-3xl font-bold" style={{ color: '#DC2626' }}>中文</p>
+                <p className="text-sm text-gray-500">Mandarin Chinese</p>
+              </div>
+              <div className="border-l border-gray-300 dark:border-gray-600 pl-6">
+                <p className="text-3xl font-bold" style={{ color: '#059669' }}>Bahasa</p>
+                <p className="text-sm text-gray-500">Indonesian</p>
+              </div>
+            </div>
+
+            {/* CTA */}
             <button
               onClick={showInstallPrompt}
-              className="px-8 py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center text-white"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:opacity-90 text-white mb-4"
               style={{ backgroundColor: config.theme.primary }}
             >
-              <Smartphone className="w-5 h-5 mr-2" />
-              Install App
+              Add to Home Screen
             </button>
-            <Link href="/drive">
-              <button className="px-8 py-4 rounded-xl font-bold text-lg border-2 transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center text-gray-900 dark:text-white"
-                style={{ borderColor: config.theme.primary }}>
-                <Car className="w-5 h-5 mr-2" />
-                Try Drive Mode
-              </button>
-            </Link>
-          </div>
-        </div>
 
-        {/* Language Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-          {availableLanguages.map(({ key, config: langConfig }) => (
-            <div
-              key={key}
-              className="p-6 rounded-2xl border-2 bg-white dark:bg-gray-800 shadow-md"
-              style={{ borderColor: langConfig.theme.primary + '40' }}
-            >
-              <div className="flex items-center mb-3">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold mr-4"
-                  style={{ backgroundColor: langConfig.theme.primary }}
-                >
-                  {langConfig.nativeName.charAt(0)}
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Free PWA · Works offline · No account needed
+            </p>
+          </div>
+
+          {/* Right side - Feature preview */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
+            <div className="space-y-6">
+              {/* Drive Mode Feature */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center flex-shrink-0">
+                  <Car className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {langConfig.name}
-                  </h3>
-                  <p className="text-2xl font-bold" style={{ color: langConfig.theme.primary }}>
-                    {langConfig.nativeName}
-                  </p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Drive Mode</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Hands-free audio quizzes with voice recognition</p>
                 </div>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">
-                {key === 'chinese'
-                  ? 'Mandarin Chinese with pinyin romanization and native audio'
-                  : 'Bahasa Indonesia with pronunciation guides'}
-              </p>
-            </div>
-          ))}
-        </div>
 
-        {/* Features Grid */}
-        <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-8">
-            Features
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="p-6 rounded-xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
-              >
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 text-white"
-                  style={{ backgroundColor: config.theme.primary }}
-                >
-                  {feature.icon}
+              {/* Flashcards Feature */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {feature.description}
-                </p>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Smart Flashcards</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Spaced repetition for long-term retention</p>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Drive Mode Highlight */}
-        <div
-          className="p-8 rounded-2xl mb-16"
-          style={{
-            background: `linear-gradient(135deg, ${config.theme.primary}15 0%, ${config.theme.secondary}15 100%)`,
-            border: `2px solid ${config.theme.primary}30`
-          }}
-        >
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="flex-shrink-0">
-              <div
-                className="w-24 h-24 rounded-2xl flex items-center justify-center text-white"
-                style={{ backgroundColor: config.theme.primary }}
-              >
-                <Car className="w-12 h-12" />
+              {/* Listening Feature */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center flex-shrink-0">
+                  <Headphones className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Listening Practice</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Train your ear with native pronunciation</p>
+                </div>
               </div>
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Learn While You Drive
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Turn your commute into study time. ChindoSpeak's Drive Mode runs a continuous audio quiz loop -
-                it speaks a prompt, listens for your answer, and gives instant feedback. No screen needed.
-              </p>
-              <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 shadow">
-                  <Volume2 className="w-4 h-4 inline mr-1" /> Voice prompts
-                </span>
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 shadow">
-                  <Mic className="w-4 h-4 inline mr-1" /> Speech recognition
-                </span>
-                <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-sm text-gray-700 dark:text-gray-300 shadow">
-                  <Zap className="w-4 h-4 inline mr-1" /> Instant feedback
-                </span>
+
+              {/* Speaking Feature */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center flex-shrink-0">
+                  <Mic className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Speaking Practice</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Practice pronunciation with feedback</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Install CTA */}
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Free to use. No account required.
-          </p>
-          <button
-            onClick={showInstallPrompt}
-            className="px-8 py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 transform hover:scale-105 text-white"
-            style={{ backgroundColor: config.theme.primary }}
-          >
-            Get Started - Install App
-          </button>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 dark:border-gray-700 py-8 mt-16">
-        <div className="container mx-auto px-4 text-center text-gray-500 dark:text-gray-400">
-          <p>ChindoSpeak • Built for Chinese-Indonesian learners</p>
+      <footer className="py-8">
+        <div className="container mx-auto px-6 text-center text-sm text-gray-400">
+          Built for Chinese-Indonesian learners
         </div>
       </footer>
     </div>
