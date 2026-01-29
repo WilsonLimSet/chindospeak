@@ -45,7 +45,7 @@ function LandingPage() {
               ChindoSpeak
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-              Learn Chinese and Indonesian with hands-free audio quizzes. Practice while you drive, commute, or walk.
+              For Chindos leveling up Mandarin & Indonesian.
             </p>
 
             {/* Languages */}
@@ -137,12 +137,6 @@ function LandingPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="py-8">
-        <div className="container mx-auto px-6 text-center text-sm text-gray-400">
-          Built for Chinese-Indonesian learners
-        </div>
-      </footer>
     </div>
   );
 }
