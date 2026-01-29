@@ -42,8 +42,15 @@ export default function InstallInstructions() {
         
         <div className="mb-6 text-black dark:text-white">
           <p className="mb-2">To install {config.ui.appName} on your iOS device:</p>
-          <ol className="list-decimal pl-5 space-y-2">
-            <li>Tap the Share button in Safari</li>
+          <ol className="list-decimal pl-5 space-y-3">
+            <li className="flex items-center gap-2">
+              Tap the Share button
+              <svg className="inline-block w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </li>
             <li>Scroll down and tap &ldquo;Add to Home Screen&rdquo;</li>
             <li>Tap &ldquo;Add&rdquo; in the top right corner</li>
           </ol>
