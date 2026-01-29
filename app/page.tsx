@@ -41,13 +41,6 @@ function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
           {/* Left side - Text content */}
           <div>
-            {/* Logo */}
-            <img
-              src="/icons/icon-512x512.png"
-              alt="ChindoSpeak"
-              className="w-20 h-20 mb-6 rounded-2xl"
-            />
-
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
               ChindoSpeak
             </h1>
