@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { UnifiedLocalStorage } from "@/shared/utils/localStorage";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { usePwa } from "@/shared/contexts/PwaContext";
-import AudioButton from "@/shared/components/AudioButton";
 import { UnifiedAudioService } from "@/shared/utils/audioService";
 import { Flashcard } from "@/shared/types";
 import Link from "next/link";
 import { playCorrect, playIncorrect } from "@/shared/utils/soundEffects";
-import SwipeableCard from "@/shared/components/SwipeableCard";
 import CategoryFilterModal from "@/shared/components/CategoryFilterModal";
 import FilterButton from "@/shared/components/FilterButton";
 
@@ -18,136 +16,135 @@ export default function SpeakPage() {
   const { isPwa } = usePwa();
   const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
   const audioService = useMemo(() => new UnifiedAudioService(config.voiceOptions), [config.voiceOptions]);
-  
+
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-  const [reviewedCards, setReviewedCards] = useState<Set<string>>(new Set());
+  const [stats, setStats] = useState({ correct: 0, incorrect: 0, skipped: 0 });
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null | undefined>(undefined);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(true);
-  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showSkipFeedback, setShowSkipFeedback] = useState(false);
+
   useEffect(() => {
-    setSpeechSupported(audioService.isSpeechSupported());
-    
     const allCategories = localStorage.getCategories();
-    // Convert Category objects to strings for backward compatibility
     const categoryNames = allCategories.map(cat => cat.name);
     setCategories(categoryNames);
-    
     loadCardsForReview();
   }, []);
-  
-  useEffect(() => {
-    if (cards.length === 0) {
-      setIsFinished(true);
-    } else if (isFinished) {
-      setIsFinished(false);
-    }
-    
-    if (currentCardIndex >= cards.length && cards.length > 0) {
-      setCurrentCardIndex(cards.length - 1);
-    }
-  }, [cards.length, currentCardIndex, isFinished]);
-  
+
   useEffect(() => {
     loadCardsForReview();
   }, [selectedCategory]);
-  
+
+  const totalCards = useMemo(() => {
+    return cards.length + stats.correct + stats.skipped;
+  }, [cards.length, stats.correct, stats.skipped]);
+
   const loadCardsForReview = () => {
-    // Use spaced repetition logic for speaking review
     let cardsToReview = localStorage.getFlashcardsForSpeakingReview();
-    
-    // Filter by category if selected
+
     if (selectedCategory === null) {
       cardsToReview = cardsToReview.filter(card => !card.categoryId);
     } else if (selectedCategory !== undefined) {
-      // Find category by name for backward compatibility
       const allCategories = localStorage.getCategories();
       const category = allCategories.find(cat => cat.name === selectedCategory);
       if (category) {
         cardsToReview = cardsToReview.filter(card => card.categoryId === category.id);
       }
     }
-    
-    // Shuffle the cards
+
     const shuffled = [...cardsToReview].sort(() => Math.random() - 0.5);
-    
+
     setCards(shuffled);
     setCurrentCardIndex(0);
     setShowAnswer(false);
     setIsFinished(shuffled.length === 0);
-    setReviewedCards(new Set());
+    setStats({ correct: 0, incorrect: 0, skipped: 0 });
   };
-  
-  const currentCard = cards.length > 0 && currentCardIndex < cards.length 
-    ? cards[currentCardIndex] 
-    : null;
-  
-  const handleShowAnswer = () => {
+
+  const currentCard = cards[currentCardIndex] || null;
+
+  const playAudio = useCallback(async () => {
+    if (!currentCard || isPlaying) return;
+
+    setIsPlaying(true);
+    try {
+      await audioService.speak(currentCard.word, 0.9, 1);
+    } catch (error) {
+      console.error('Audio playback failed:', error);
+    } finally {
+      setIsPlaying(false);
+    }
+  }, [currentCard, audioService, isPlaying]);
+
+  const handleShowAnswer = async () => {
     setShowAnswer(true);
+    // Auto-play audio when revealing answer
+    setTimeout(() => playAudio(), 300);
   };
-  
+
   const handleResult = (successful: boolean) => {
     if (!currentCard) return;
 
-    // Play sound effect
     if (successful) {
       playCorrect();
+      setStats(prev => ({ ...prev, correct: prev.correct + 1 }));
     } else {
       playIncorrect();
+      setStats(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
     }
 
-    // Update speaking review level using spaced repetition
     localStorage.updateSpeakingReviewLevel(currentCard.id, successful);
-
-    // Update daily challenge progress
     localStorage.updateChallengeProgress(1, 'speaking_practice');
 
-    setReviewedCards(prev => new Set(prev).add(currentCard.id));
-    
     if (!successful) {
-      // Move card to back of queue for immediate retry
+      // Move card to back of queue
       setCards(prevCards => {
-        if (prevCards.length <= 1) {
-          return prevCards;
-        }
-        
-        const currentCardItem = prevCards[currentCardIndex];
-        const newCards = prevCards.filter((_, index) => index !== currentCardIndex);
-        const updatedCards = [...newCards, currentCardItem];
-        
-        return updatedCards;
-      });
-      
-      if (currentCardIndex >= cards.length - 1) {
-        setCurrentCardIndex(0);
-      }
-    } else {
-      // Remove card from current session (it's been successfully reviewed)
-      setCards(prevCards => {
-        const newCards = prevCards.filter((_, index) => index !== currentCardIndex);
+        if (prevCards.length <= 1) return prevCards;
+        const newCards = [...prevCards];
+        const [removed] = newCards.splice(currentCardIndex, 1);
+        newCards.push(removed);
         return newCards;
       });
-      
-      // Adjust current index if necessary
+    } else {
+      // Remove card from queue
+      setCards(prevCards => prevCards.filter((_, i) => i !== currentCardIndex));
       if (currentCardIndex >= cards.length - 1) {
         setCurrentCardIndex(0);
-        if (cards.length <= 1) {
-          setIsFinished(true);
-        }
       }
     }
-    
+
+    if (cards.length <= 1 && successful) {
+      setIsFinished(true);
+    }
+
     setShowAnswer(false);
   };
-  
-  const toggleCategoryFilter = () => {
-    setShowCategoryFilter(!showCategoryFilter);
+
+  const handleSkip = () => {
+    if (!currentCard) return;
+
+    setShowSkipFeedback(true);
+    setTimeout(() => setShowSkipFeedback(false), 500);
+
+    setStats(prev => ({ ...prev, skipped: prev.skipped + 1 }));
+
+    // Remove card without affecting spaced repetition
+    setCards(prevCards => prevCards.filter((_, i) => i !== currentCardIndex));
+
+    if (currentCardIndex >= cards.length - 1) {
+      setCurrentCardIndex(0);
+    }
+
+    if (cards.length <= 1) {
+      setIsFinished(true);
+    }
+
+    setShowAnswer(false);
   };
-  
 
   if (!isPwa) {
     return (
@@ -160,7 +157,7 @@ export default function SpeakPage() {
             Install the app to use speaking practice features
           </p>
           <Link href="/">
-            <button 
+            <button
               className="px-6 py-3 rounded-md text-white font-medium"
               style={{ backgroundColor: config.theme.primary }}
             >
@@ -174,172 +171,217 @@ export default function SpeakPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {config.ui.navigation.speak} Practice
+          {config.ui.navigation.speak}
         </h1>
+        <FilterButton onClick={() => setShowCategoryFilter(true)} />
       </div>
-      
-      {/* Stats */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-6">
-        <div className="flex justify-between items-center">
-          <div className="text-center p-2 rounded-lg flex-1 mr-2" style={{ backgroundColor: config.theme.secondary + '20' }}>
-            <p className="text-xs sm:text-sm text-gray-900 dark:text-white font-medium mb-1">Reviewed</p>
-            <p className="text-xl sm:text-2xl font-bold" style={{ color: config.theme.primary }}>
-              {reviewedCards.size}
-            </p>
+
+      {/* Progress bar */}
+      {!isFinished && totalCards > 0 && (
+        <div className="mb-6">
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+            <span>{stats.correct + stats.skipped} / {totalCards}</span>
+            <span className="flex gap-3">
+              <span className="text-green-500">{stats.correct} correct</span>
+              {stats.incorrect > 0 && (
+                <span className="text-red-500">{stats.incorrect} retry</span>
+              )}
+              {stats.skipped > 0 && (
+                <span className="text-gray-400">{stats.skipped} skipped</span>
+              )}
+            </span>
           </div>
-          <div className="text-center p-2 rounded-lg flex-1 ml-2" style={{ backgroundColor: config.theme.accent + '20' }}>
-            <p className="text-xs sm:text-sm text-gray-900 dark:text-white font-medium mb-1">To Review</p>
-            <p className="text-xl sm:text-2xl font-bold" style={{ color: config.theme.accent }}>
-              {Math.max(0, cards.length - currentCardIndex)}
-            </p>
+          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full transition-all duration-300 rounded-full"
+              style={{
+                width: `${((stats.correct + stats.skipped) / totalCards) * 100}%`,
+                backgroundColor: config.theme.primary
+              }}
+            />
           </div>
         </div>
-      </div>
-      
-      {/* Controls */}
-      <div className="flex justify-between mb-6">
-        <div className="flex space-x-2">
-          <FilterButton onClick={toggleCategoryFilter} />
+      )}
+
+      {/* Skip feedback toast */}
+      {showSkipFeedback && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
+          Skipped
         </div>
-      </div>
-      
+      )}
+
       {/* Finished state */}
       {isFinished && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 text-center">
-          <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-            {currentLanguage === 'chinese' ? '全部完成！' : 'All Done!'}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">
+            Session Complete!
           </h2>
-          <p className="mb-6 text-gray-600 dark:text-gray-400">
-            You&apos;ve reviewed all the cards in this category.
-          </p>
+
+          {/* Stats summary */}
+          <div className="flex justify-center gap-6 my-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-500">{stats.correct}</div>
+              <div className="text-sm text-gray-500">Correct</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-500">{stats.incorrect}</div>
+              <div className="text-sm text-gray-500">Retried</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-400">{stats.skipped}</div>
+              <div className="text-sm text-gray-500">Skipped</div>
+            </div>
+          </div>
+
           <div className="flex flex-col space-y-3">
-            <Link href="/">
-              <button 
-                className="w-full py-3 px-4 text-white rounded-md hover:opacity-90"
-                style={{ backgroundColor: config.theme.secondary }}
-              >
-                {config.ui.navigation.create} New Flashcard
-              </button>
-            </Link>
-            <button 
+            <button
               onClick={() => {
                 setSelectedCategory(undefined);
-                setTimeout(() => {
-                  loadCardsForReview();
-                }, 100);
+                setTimeout(loadCardsForReview, 100);
               }}
-              className="w-full py-3 px-4 text-white rounded-md hover:opacity-90"
-              style={{ backgroundColor: config.theme.accent }}
+              className="w-full py-3 px-4 text-white rounded-md"
+              style={{ backgroundColor: config.theme.primary }}
             >
-              Review All Categories
+              Practice Again
             </button>
+            <Link href="/">
+              <button
+                className="w-full py-3 px-4 text-gray-700 dark:text-gray-300 rounded-md border border-gray-300 dark:border-gray-600"
+              >
+                Create New Cards
+              </button>
+            </Link>
           </div>
         </div>
       )}
-      
+
       {/* Card */}
       {!isFinished && currentCard && (
-        <SwipeableCard
-          onSwipeLeft={() => handleResult(false)}
-          onSwipeRight={() => handleResult(true)}
-          enabled={showAnswer}
-        >
-          <div className="rounded-lg shadow-md overflow-hidden mb-6">
-            {/* Card header with category if available */}
-            {currentCard.category && (
-              <div
-                className="px-4 py-2 text-sm font-medium text-white"
-                style={{ backgroundColor: config.theme.accent }}
-              >
-                {currentCard.category}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+          {/* Category tag */}
+          {currentCard.category && (
+            <div
+              className="px-4 py-1.5 text-xs font-medium text-white"
+              style={{ backgroundColor: config.theme.accent }}
+            >
+              {currentCard.category}
+            </div>
+          )}
+
+          <div className="p-6">
+            {/* Prompt - what to say */}
+            <div className="text-center mb-6">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Say this in {config.name}:
+              </p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {currentCard.translation}
+              </h2>
+            </div>
+
+            {/* Answer section */}
+            {showAnswer && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 text-center">
+                  Answer:
+                </p>
+                <h3 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                  {currentCard.word}
+                </h3>
+                {currentCard.pronunciation && (
+                  <p className="text-lg text-gray-500 dark:text-gray-400 text-center mb-4">
+                    {currentCard.pronunciation}
+                  </p>
+                )}
+
+                {/* Audio button - prominent */}
+                <button
+                  onClick={playAudio}
+                  disabled={isPlaying}
+                  className="w-full py-4 rounded-lg flex items-center justify-center gap-3 transition-all"
+                  style={{
+                    backgroundColor: isPlaying ? config.theme.primary + '80' : config.theme.primary + '20',
+                    color: config.theme.primary
+                  }}
+                >
+                  {isPlaying ? (
+                    <>
+                      <svg className="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                      </svg>
+                      Playing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                      </svg>
+                      Tap to hear pronunciation
+                    </>
+                  )}
+                </button>
               </div>
             )}
-
-            {/* Card content - REVERSED: showing English first for speaking practice */}
-            <div className="p-6">
-              <div className="mb-6 text-center">
-                {/* Show translation first (what they need to say) */}
-                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
-                  {currentCard.translation}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  {currentLanguage === 'chinese' ? '说出中文' : 'Say in ' + config.name}
-                </p>
-
-                {showAnswer && (
-                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <h3 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                      {currentCard.word}
-                    </h3>
-                    {currentCard.pronunciation && (
-                      <p className="text-lg text-gray-600 dark:text-gray-400">
-                        {currentCard.pronunciation}
-                      </p>
-                    )}
-
-                    {/* Add audio button for pronunciation help */}
-                    {speechSupported && (
-                      <div className="mt-4 flex justify-center">
-                        <AudioButton
-                          text={currentCard.word}
-                          size="md"
-                          voiceConfig={config.voiceOptions}
-                          iconType="svg"
-                          primaryColor={config.theme.primary}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
-        </SwipeableCard>
+        </div>
       )}
-      
-      {/* Actions */}
+
+      {/* Action buttons */}
       {!isFinished && currentCard && (
-        <div className="flex flex-col items-center">
+        <div className="space-y-3">
           {!showAnswer ? (
-            <button
-              onClick={handleShowAnswer}
-              className="w-full max-w-xs text-white py-3 px-6 rounded-lg font-medium shadow-md transition-all duration-300 flex items-center justify-center"
-              style={{ backgroundColor: config.theme.secondary }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-              Show Answer
-            </button>
+            <>
+              <button
+                onClick={handleShowAnswer}
+                className="w-full text-white py-4 rounded-lg font-medium shadow-md text-lg"
+                style={{ backgroundColor: config.theme.primary }}
+              >
+                Show Answer
+              </button>
+              <button
+                onClick={handleSkip}
+                className="w-full py-3 text-gray-500 dark:text-gray-400 text-sm"
+              >
+                Skip this word →
+              </button>
+            </>
           ) : (
-            <div className="flex space-x-4 justify-center w-full">
+            <>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleResult(false)}
+                  className="flex-1 bg-red-500 text-white py-4 rounded-lg font-medium text-lg flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Again
+                </button>
+                <button
+                  onClick={() => handleResult(true)}
+                  className="flex-1 bg-green-500 text-white py-4 rounded-lg font-medium text-lg flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Got it
+                </button>
+              </div>
               <button
-                onClick={() => handleResult(false)}
-                className="flex-1 max-w-xs bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-6 rounded-lg hover:from-red-600 hover:to-red-500 font-medium shadow-md transition-all duration-300 flex items-center justify-center"
+                onClick={handleSkip}
+                className="w-full py-3 text-gray-500 dark:text-gray-400 text-sm"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-                </svg>
-                Again
+                Skip this word →
               </button>
-              <button
-                onClick={() => handleResult(true)}
-                className="flex-1 max-w-xs bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-lg hover:from-green-600 hover:to-green-500 font-medium shadow-md transition-all duration-300 flex items-center justify-center"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                Got It
-              </button>
-            </div>
+            </>
           )}
         </div>
       )}
-      
+
       <CategoryFilterModal
         isOpen={showCategoryFilter}
         onClose={() => setShowCategoryFilter(false)}

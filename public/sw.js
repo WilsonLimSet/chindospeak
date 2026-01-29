@@ -1,5 +1,5 @@
 // Service Worker for ChindoSpeak PWA
-const CACHE_NAME = 'chindospeak-v5';
+const CACHE_NAME = 'chindospeak-v6';
 const urlsToCache = [
   '/',
   '/offline',
