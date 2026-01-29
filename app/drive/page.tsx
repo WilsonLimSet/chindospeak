@@ -150,6 +150,17 @@ export default function DrivePage() {
     }
   }, [currentLanguage]);
 
+  // Ref for listening timeout
+  const listeningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear listening timeout
+  const clearListeningTimeout = useCallback(() => {
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current);
+      listeningTimeoutRef.current = null;
+    }
+  }, []);
+
   // Start listening for answer
   const startListening = useCallback((expectedLang: 'target' | 'english') => {
     if (!recognitionRef.current) {
@@ -157,6 +168,9 @@ export default function DrivePage() {
     }
 
     const recognition = recognitionRef.current!;
+
+    // Clear any existing timeout
+    clearListeningTimeout();
 
     // Set language based on what we expect to hear
     if (expectedLang === 'english') {
@@ -166,25 +180,44 @@ export default function DrivePage() {
     }
 
     recognition.onresult = (event) => {
+      clearListeningTimeout();
       const transcript = event.results[0][0].transcript;
       handleAnswer(transcript);
     };
 
     recognition.onerror = (event) => {
+      clearListeningTimeout();
       handleRecognitionError(event.error);
     };
 
     recognition.onend = () => {
-      // Will be handled by state transitions
+      clearListeningTimeout();
+      // If we're still in listening state, it means no result came - treat as timeout
+      if (isRunningRef.current && quizState === 'listening') {
+        handleRecognitionError('no-speech');
+      }
     };
 
     try {
       recognition.start();
       setQuizState('listening');
+
+      // Set a timeout - if no response in 8 seconds, stop and retry
+      listeningTimeoutRef.current = setTimeout(() => {
+        if (recognitionRef.current && isRunningRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch {
+            // Already stopped
+          }
+          handleRecognitionError('timeout');
+        }
+      }, 8000);
     } catch {
+      clearListeningTimeout();
       handleRecognitionError('start-failed');
     }
-  }, [currentLanguage, initRecognition]);
+  }, [currentLanguage, initRecognition, clearListeningTimeout, quizState]);
 
   // Handle user's answer
   const handleAnswer = useCallback(async (transcript: string) => {
@@ -511,11 +544,12 @@ export default function DrivePage() {
   // Stop the quiz
   const handleStop = useCallback(() => {
     isRunningRef.current = false;
+    clearListeningTimeout();
 
     if (recognitionRef.current) {
       try {
         recognitionRef.current.abort();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
@@ -525,16 +559,19 @@ export default function DrivePage() {
 
     setQuizState('idle');
     setShowSettings(true);
-  }, [audioService, wakeLock]);
+  }, [audioService, wakeLock, clearListeningTimeout]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       isRunningRef.current = false;
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+      }
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
-        } catch (e) {
+        } catch {
           // Ignore
         }
       }

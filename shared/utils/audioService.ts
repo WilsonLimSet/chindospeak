@@ -47,26 +47,55 @@ export class UnifiedAudioService {
 
   /**
    * Gets the best available voice based on the priority list
+   * Prefers enhanced/premium voices (Siri, Enhanced) over basic ones
    */
   getBestVoice(): SpeechSynthesisVoice | null {
     const languageVoices = this.getLanguageVoices();
     if (languageVoices.length === 0) return null;
-    
-    // Sort voice options by priority (higher is better)
+
+    // Score voices - higher is better
+    const scoreVoice = (voice: SpeechSynthesisVoice): number => {
+      let score = 0;
+      const name = voice.name.toLowerCase();
+
+      // Premium/Enhanced voices (iOS downloads these from Settings)
+      if (name.includes('premium')) score += 100;
+      if (name.includes('enhanced')) score += 90;
+      if (name.includes('siri')) score += 80;
+
+      // Prefer local voices over network (more reliable)
+      if (voice.localService) score += 20;
+
+      // Specific high-quality voices
+      if (name.includes('samantha')) score += 50; // Good English voice
+      if (name.includes('tingting') || name.includes('tian-tian')) score += 50; // Good Chinese voices
+      if (name.includes('meijia')) score += 50; // Good Chinese voice
+      if (name.includes('damayanti')) score += 50; // Indonesian voice
+
+      // Avoid compact/basic voices
+      if (name.includes('compact')) score -= 50;
+
+      return score;
+    };
+
+    // Sort by score (highest first)
+    const sortedVoices = [...languageVoices].sort((a, b) => scoreVoice(b) - scoreVoice(a));
+
+    // Also check configured voice options
     const sortedVoiceOptions = [...this.voiceOptions].sort((a, b) => b.priority - a.priority);
-    
-    // Try to find a voice from our preferred list
+
+    // Try to find a configured voice first (if it's high quality)
     for (const voiceOption of sortedVoiceOptions) {
-      const voice = languageVoices.find(v => 
-        v.name === voiceOption.name || 
+      const voice = sortedVoices.find(v =>
+        v.name === voiceOption.name ||
         v.voiceURI === voiceOption.name ||
         v.name.toLowerCase().includes(voiceOption.name.toLowerCase())
       );
-      if (voice) return voice;
+      if (voice && scoreVoice(voice) >= 50) return voice;
     }
-    
-    // If no preferred voice is found, return the first available voice
-    return languageVoices[0];
+
+    // Otherwise return the highest scored voice
+    return sortedVoices[0];
   }
 
   /**
