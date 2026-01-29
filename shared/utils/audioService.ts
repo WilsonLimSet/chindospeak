@@ -2,191 +2,212 @@ import { VoiceConfig } from '@/shared/types';
 
 export class UnifiedAudioService {
   private voiceOptions: VoiceConfig[];
-  private currentUtterance: SpeechSynthesisUtterance | null = null;
+  private currentAudio: HTMLAudioElement | null = null;
+  private audioCache: Map<string, string> = new Map(); // Cache blob URLs
 
   constructor(voiceOptions: VoiceConfig[]) {
     this.voiceOptions = voiceOptions;
   }
 
   /**
-   * Checks if text-to-speech is supported in the current browser
+   * Gets the primary language code from voice options
+   */
+  private getPrimaryLang(): string {
+    return this.voiceOptions[0]?.lang || 'en-US';
+  }
+
+  /**
+   * Generates a cache key for audio
+   */
+  private getCacheKey(text: string, lang: string): string {
+    return `${lang}:${text}`;
+  }
+
+  /**
+   * Speaks the provided text using Edge TTS API
+   */
+  async speak(text: string, rate: number = 1.0, _pitch: number = 1): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Cancel any ongoing audio
+        this.cancelSpeech();
+
+        const lang = this.getPrimaryLang();
+        const cacheKey = this.getCacheKey(text, lang);
+
+        // Check cache first
+        let audioUrl = this.audioCache.get(cacheKey);
+
+        if (!audioUrl) {
+          // Fetch from API
+          const response = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, lang, rate }),
+          });
+
+          if (!response.ok) {
+            throw new Error('TTS API request failed');
+          }
+
+          // Create blob URL from response
+          const blob = await response.blob();
+          audioUrl = URL.createObjectURL(blob);
+
+          // Cache the blob URL (limit cache size)
+          if (this.audioCache.size > 100) {
+            // Remove oldest entry
+            const firstKey = this.audioCache.keys().next().value;
+            if (firstKey) {
+              const oldUrl = this.audioCache.get(firstKey);
+              if (oldUrl) URL.revokeObjectURL(oldUrl);
+              this.audioCache.delete(firstKey);
+            }
+          }
+          this.audioCache.set(cacheKey, audioUrl);
+        }
+
+        // Create and play audio
+        const audio = new Audio(audioUrl);
+        this.currentAudio = audio;
+
+        audio.onended = () => {
+          this.currentAudio = null;
+          resolve();
+        };
+
+        audio.onerror = () => {
+          this.currentAudio = null;
+          // Fallback to browser TTS if Edge TTS fails
+          this.speakFallback(text, rate).then(resolve).catch(reject);
+        };
+
+        await audio.play();
+      } catch (error) {
+        console.error('Edge TTS failed, falling back to browser TTS:', error);
+        // Fallback to browser TTS
+        this.speakFallback(text, rate).then(resolve).catch(reject);
+      }
+    });
+  }
+
+  /**
+   * Fallback to browser's speechSynthesis API
+   */
+  private async speakFallback(text: string, rate: number = 0.9): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.isSpeechSupported()) {
+        reject(new Error('Text-to-speech not supported'));
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = this.getPrimaryLang();
+      utterance.rate = rate;
+
+      utterance.onend = () => resolve();
+      utterance.onerror = () => reject(new Error('Speech synthesis failed'));
+
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
+  /**
+   * Checks if browser TTS is supported (for fallback)
    */
   isSpeechSupported(): boolean {
     return typeof window !== 'undefined' && 'speechSynthesis' in window;
   }
 
   /**
-   * Gets available voices for speech synthesis
-   */
-  getAvailableVoices(): SpeechSynthesisVoice[] {
-    if (!this.isSpeechSupported()) return [];
-    
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      // If no voices are available yet, try to force loading them
-      window.speechSynthesis.cancel();
-      return window.speechSynthesis.getVoices();
-    }
-    
-    return voices;
-  }
-
-  /**
-   * Gets voices that match the current language configuration
-   */
-  getLanguageVoices(): SpeechSynthesisVoice[] {
-    if (!this.isSpeechSupported()) return [];
-    
-    const allVoices = this.getAvailableVoices();
-    const supportedLangs = this.voiceOptions.map(v => v.lang);
-    
-    return allVoices.filter(voice => 
-      supportedLangs.some(lang => voice.lang.includes(lang.split('-')[0]))
-    );
-  }
-
-  /**
-   * Gets the best available voice based on the priority list
-   * Prefers enhanced/premium voices (Siri, Enhanced) over basic ones
-   */
-  getBestVoice(): SpeechSynthesisVoice | null {
-    const languageVoices = this.getLanguageVoices();
-    if (languageVoices.length === 0) return null;
-
-    // Score voices - higher is better
-    const scoreVoice = (voice: SpeechSynthesisVoice): number => {
-      let score = 0;
-      const name = voice.name.toLowerCase();
-
-      // Premium/Enhanced voices (iOS downloads these from Settings)
-      if (name.includes('premium')) score += 100;
-      if (name.includes('enhanced')) score += 90;
-      if (name.includes('siri')) score += 80;
-
-      // Prefer local voices over network (more reliable)
-      if (voice.localService) score += 20;
-
-      // Specific high-quality voices
-      if (name.includes('samantha')) score += 50; // Good English voice
-      if (name.includes('tingting') || name.includes('tian-tian')) score += 50; // Good Chinese voices
-      if (name.includes('meijia')) score += 50; // Good Chinese voice
-      if (name.includes('damayanti')) score += 50; // Indonesian voice
-
-      // Avoid compact/basic voices
-      if (name.includes('compact')) score -= 50;
-
-      return score;
-    };
-
-    // Sort by score (highest first)
-    const sortedVoices = [...languageVoices].sort((a, b) => scoreVoice(b) - scoreVoice(a));
-
-    // Also check configured voice options
-    const sortedVoiceOptions = [...this.voiceOptions].sort((a, b) => b.priority - a.priority);
-
-    // Try to find a configured voice first (if it's high quality)
-    for (const voiceOption of sortedVoiceOptions) {
-      const voice = sortedVoices.find(v =>
-        v.name === voiceOption.name ||
-        v.voiceURI === voiceOption.name ||
-        v.name.toLowerCase().includes(voiceOption.name.toLowerCase())
-      );
-      if (voice && scoreVoice(voice) >= 50) return voice;
-    }
-
-    // Otherwise return the highest scored voice
-    return sortedVoices[0];
-  }
-
-  /**
-   * Speaks the provided text using the Web Speech API
-   */
-  async speak(text: string, rate: number = 0.9, pitch: number = 1): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.isSpeechSupported()) {
-        reject(new Error('Text-to-speech not supported in this browser'));
-        return;
-      }
-
-      // Cancel any ongoing speech
-      this.cancelSpeech();
-
-      // Create a new utterance
-      const utterance = new SpeechSynthesisUtterance(text);
-      this.currentUtterance = utterance;
-      
-      // Try to use the best available voice
-      const bestVoice = this.getBestVoice();
-      if (bestVoice) {
-        utterance.voice = bestVoice;
-      } else {
-        // Fallback to language setting
-        utterance.lang = this.voiceOptions[0]?.lang || 'en-US';
-      }
-      
-      // Set rate and pitch
-      utterance.rate = rate;
-      utterance.pitch = pitch;
-
-      // Handle events
-      utterance.onend = () => {
-        this.currentUtterance = null;
-        resolve();
-      };
-
-      utterance.onerror = () => {
-        this.currentUtterance = null;
-        reject(new Error('Speech synthesis failed'));
-      };
-
-      // Speak the text
-      window.speechSynthesis.speak(utterance);
-    });
-  }
-
-  /**
    * Cancels any ongoing speech
    */
   cancelSpeech(): void {
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
+      this.currentAudio = null;
+    }
+    // Also cancel browser TTS if running
     if (this.isSpeechSupported()) {
       window.speechSynthesis.cancel();
-      this.currentUtterance = null;
     }
   }
 
   /**
-   * Checks if speech is currently playing
+   * Checks if audio is currently playing
    */
   isSpeaking(): boolean {
+    if (this.currentAudio && !this.currentAudio.paused) {
+      return true;
+    }
     return this.isSpeechSupported() && window.speechSynthesis.speaking;
   }
 
   /**
-   * Pauses ongoing speech
+   * Pauses ongoing audio
    */
   pauseSpeech(): void {
-    if (this.isSpeechSupported() && this.isSpeaking()) {
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+    }
+    if (this.isSpeechSupported()) {
       window.speechSynthesis.pause();
     }
   }
 
   /**
-   * Resumes paused speech
+   * Resumes paused audio
    */
   resumeSpeech(): void {
+    if (this.currentAudio && this.currentAudio.paused) {
+      this.currentAudio.play();
+    }
     if (this.isSpeechSupported() && window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
     }
   }
 
   /**
-   * Gets information about available voices for debugging
+   * Clears the audio cache
    */
+  clearCache(): void {
+    for (const url of this.audioCache.values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.audioCache.clear();
+  }
+
+  /**
+   * Gets cache info for debugging
+   */
+  getCacheInfo(): { size: number } {
+    return { size: this.audioCache.size };
+  }
+
+  // Legacy methods for compatibility
+  getAvailableVoices(): SpeechSynthesisVoice[] {
+    if (!this.isSpeechSupported()) return [];
+    return window.speechSynthesis.getVoices();
+  }
+
+  getLanguageVoices(): SpeechSynthesisVoice[] {
+    return this.getAvailableVoices().filter(voice =>
+      this.voiceOptions.some(v => voice.lang.includes(v.lang.split('-')[0]))
+    );
+  }
+
+  getBestVoice(): SpeechSynthesisVoice | null {
+    const voices = this.getLanguageVoices();
+    return voices[0] || null;
+  }
+
   getVoiceInfo(): { available: number; configured: number; best: string | null } {
-    const available = this.getAvailableVoices().length;
-    const configured = this.getLanguageVoices().length;
-    const best = this.getBestVoice()?.name || null;
-    
-    return { available, configured, best };
+    return {
+      available: this.getAvailableVoices().length,
+      configured: this.getLanguageVoices().length,
+      best: 'Edge TTS (Neural)',
+    };
   }
 }
