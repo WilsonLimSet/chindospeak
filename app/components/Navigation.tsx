@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import PwaWrapper from "@/shared/components/PwaWrapper";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { useHaptic } from "@/shared/hooks/useHaptic";
 import Link from "next/link";
 
 export default function Navigation() {
@@ -32,9 +33,9 @@ export default function Navigation() {
   }, [config.code]);
 
   return (
-    <nav 
-      className="text-white p-2 sm:p-4 sticky top-0 z-20 shadow-lg backdrop-blur-sm"
-      style={{ 
+    <nav
+      className="text-white p-2 sm:p-4 sticky top-0 z-20 shadow-lg backdrop-blur-sm safe-top"
+      style={{
         backgroundColor: config.theme.primary,
         backgroundImage: `linear-gradient(135deg, ${config.theme.primary} 0%, ${config.theme.secondary} 100%)`
       }}
@@ -67,30 +68,32 @@ export default function Navigation() {
   );
 }
 
-function NavLink({ 
-  href, 
-  current, 
-  children, 
-  config 
-}: { 
-  href: string; 
-  current: boolean; 
+function NavLink({
+  href,
+  current,
+  children,
+  config
+}: {
+  href: string;
+  current: boolean;
   children: React.ReactNode;
   config: any;
 }) {
+  const haptic = useHaptic();
   // Check if the content uses complex script (Chinese characters, etc.)
-  const isComplexScript = config.features.complexScript && 
-    typeof children === 'string' && 
+  const isComplexScript = config.features.complexScript &&
+    typeof children === 'string' &&
     /[\u4e00-\u9fff\u3400-\u4dbf]/.test(children);
-  
+
   return (
     <Link
       href={href}
+      onClick={() => { if (!current) haptic("selection"); }}
       className={`px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5 md:py-2 rounded-md sm:rounded-lg whitespace-nowrap ${
         isComplexScript ? 'text-base sm:text-lg md:text-xl font-medium' : 'text-sm sm:text-base md:text-lg font-medium'
       } ${
-        current 
-          ? 'text-white bg-white/20 shadow-lg' 
+        current
+          ? 'text-white bg-white/20 shadow-lg'
           : 'text-white/90 hover:text-white hover:bg-white/10'
       } transition-all duration-200`}
     >

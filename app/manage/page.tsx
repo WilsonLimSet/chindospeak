@@ -60,6 +60,15 @@ export default function ManagePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null | undefined>(undefined);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
 
+  // Inline notification (replaces native alert for import flow)
+  const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const id = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(id);
+  }, [notice]);
+
   // Statistics
   const [stats, setStats] = useState({
     totalCards: 0,
@@ -153,9 +162,14 @@ export default function ManagePage() {
       localStorage.deleteFlashcard(id);
       setFlashcards(flashcards.filter(card => card.id !== id));
       setConfirmDelete(null);
-      loadData(); // Refresh stats
+      loadData();
     } else {
       setConfirmDelete(id);
+      // Auto-revert after 3s so a single absent-minded tap can't accidentally
+      // confirm a delete the user has forgotten about.
+      window.setTimeout(() => {
+        setConfirmDelete((current) => (current === id ? null : current));
+      }, 3000);
     }
   };
 
@@ -253,19 +267,15 @@ export default function ManagePage() {
         const result = localStorage.importData(data);
         
         if (result.success) {
-          // Refresh the local data
           loadData();
-          
-          // Show success message
-          alert(`Successfully imported ${flashcardsToImport.length} flashcards!`);
+          setNotice({ kind: "ok", text: `Imported ${flashcardsToImport.length} flashcards.` });
         } else {
           throw new Error(result.message);
         }
-        
-        // Reset the file input
+
         event.target.value = '';
       } catch {
-        alert('Error importing file. Please make sure it\'s a valid flashcards export file.');
+        setNotice({ kind: "err", text: "Couldn't import that file. Make sure it's a valid flashcards export." });
         event.target.value = '';
       }
     };
@@ -325,8 +335,16 @@ export default function ManagePage() {
     if (!showCategoryFilter) return null;
     
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        onClick={() => setShowCategoryFilter(false)}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div
+          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md"
+          onClick={(e) => e.stopPropagation()}
+        >
           <h2 className="text-xl font-bold mb-4 text-black dark:text-white">
             {currentLanguage === 'chinese' ? '按类别筛选' : 'Filter by Category'}
           </h2>
@@ -423,7 +441,7 @@ export default function ManagePage() {
 
   if (!isPwa) {
     return (
-      <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+      <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-[100dvh]">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
             {config.ui.navigation.manage}
@@ -445,7 +463,20 @@ export default function ManagePage() {
   }
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-6xl min-h-screen">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-6xl min-h-[100dvh]">
+      {notice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
+            notice.kind === "ok"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {notice.text}
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
           <svg className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1026,8 +1057,16 @@ export default function ManagePage() {
       
       {/* Category Management Modal */}
       {showCategoryManageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowCategoryManageModal(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Manage Categories
             </h2>
@@ -1116,8 +1155,16 @@ export default function ManagePage() {
       
       {/* Category Add/Edit Modal */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowCategoryModal(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               {editingCategory ? 'Edit Category' : 'Add Category'}
             </h2>
@@ -1179,8 +1226,16 @@ export default function ManagePage() {
 
       {/* Delete Category Confirmation */}
       {confirmDeleteCategory && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setConfirmDeleteCategory(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Delete Category
             </h2>

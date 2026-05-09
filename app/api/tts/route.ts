@@ -31,12 +31,22 @@ function detectLanguage(text: string): string {
   return 'en-US';
 }
 
+const MAX_TEXT_LENGTH = 500;
+
 export async function POST(request: NextRequest) {
+  if (!request.headers.get('content-type')?.includes('application/json')) {
+    return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 415 });
+  }
+
   try {
     const { text, lang, gender = 'female', rate = 1.0 } = await request.json();
 
-    if (!text) {
+    if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 });
+    }
+
+    if (text.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json({ error: `Text must be ${MAX_TEXT_LENGTH} characters or fewer` }, { status: 413 });
     }
 
     // Determine language and voice

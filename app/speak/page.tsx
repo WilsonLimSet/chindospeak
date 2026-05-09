@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { UnifiedLocalStorage } from "@/shared/utils/localStorage";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { usePwa } from "@/shared/contexts/PwaContext";
@@ -8,14 +8,18 @@ import { UnifiedAudioService } from "@/shared/utils/audioService";
 import { Flashcard } from "@/shared/types";
 import Link from "next/link";
 import { playCorrect, playIncorrect } from "@/shared/utils/soundEffects";
+import { useHaptic } from "@/shared/hooks/useHaptic";
 import CategoryFilterModal from "@/shared/components/CategoryFilterModal";
 import FilterButton from "@/shared/components/FilterButton";
 
 export default function SpeakPage() {
   const { config, currentLanguage } = useLanguage();
   const { isPwa } = usePwa();
+  const haptic = useHaptic();
   const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
   const audioService = useMemo(() => new UnifiedAudioService(config.voiceOptions), [config.voiceOptions]);
+
+  useEffect(() => () => audioService.clearCache(), [audioService]);
 
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -67,18 +71,21 @@ export default function SpeakPage() {
 
   const currentCard = cards[currentCardIndex] || null;
 
+  const isPlayingRef = useRef(false);
   const playAudio = useCallback(async () => {
-    if (!currentCard || isPlaying) return;
+    if (!currentCard || isPlayingRef.current) return;
 
+    isPlayingRef.current = true;
     setIsPlaying(true);
     try {
       await audioService.speak(currentCard.word, 0.9, 1);
     } catch (error) {
       console.error('Audio playback failed:', error);
     } finally {
+      isPlayingRef.current = false;
       setIsPlaying(false);
     }
-  }, [currentCard, audioService, isPlaying]);
+  }, [currentCard, audioService]);
 
   const handleShowAnswer = async () => {
     setShowAnswer(true);
@@ -91,9 +98,11 @@ export default function SpeakPage() {
 
     if (successful) {
       playCorrect();
+      haptic("success");
       setStats(prev => ({ ...prev, correct: prev.correct + 1 }));
     } else {
       playIncorrect();
+      haptic("warning");
       setStats(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
     }
 
@@ -148,7 +157,7 @@ export default function SpeakPage() {
 
   if (!isPwa) {
     return (
-      <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+      <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-[100dvh]">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
             {config.ui.navigation.speak}
@@ -170,7 +179,7 @@ export default function SpeakPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-[100dvh]">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">

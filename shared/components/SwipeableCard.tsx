@@ -3,6 +3,7 @@
 import { useState, ReactNode } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { playSwipe } from '@/shared/utils/soundEffects';
+import { useHaptic } from '@/shared/hooks/useHaptic';
 
 interface SwipeableCardProps {
   children: ReactNode;
@@ -27,6 +28,7 @@ export default function SwipeableCard({
 }: SwipeableCardProps) {
   const [offset, setOffset] = useState(0);
   const [swiping, setSwiping] = useState(false);
+  const haptic = useHaptic();
 
   const handlers = useSwipeable({
     onSwiping: (e) => {
@@ -41,6 +43,7 @@ export default function SwipeableCard({
       if (!enabled) return;
       if (offset < -50) {
         playSwipe();
+        haptic("warning");
         onSwipeLeft();
       }
       setOffset(0);
@@ -50,6 +53,7 @@ export default function SwipeableCard({
       if (!enabled) return;
       if (offset > 50) {
         playSwipe();
+        haptic("success");
         onSwipeRight();
       }
       setOffset(0);

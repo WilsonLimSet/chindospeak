@@ -36,8 +36,16 @@ export default function InstallInstructions() {
   }
   
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md">
+    <div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
+      onClick={() => setIsOpen(false)}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-xl font-bold mb-4 text-black dark:text-white">Add to Home Screen</h2>
         
         <div className="mb-6 text-black dark:text-white">

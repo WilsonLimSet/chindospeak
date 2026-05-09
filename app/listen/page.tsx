@@ -18,6 +18,8 @@ export default function ListenPage() {
   const { isPwa } = usePwa();
   const localStorage = useMemo(() => new UnifiedLocalStorage(`${config.code}-flashcards`), [config.code]);
   const audioService = useMemo(() => new UnifiedAudioService(config.voiceOptions), [config.voiceOptions]);
+
+  useEffect(() => () => audioService.clearCache(), [audioService]);
   
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -202,7 +204,7 @@ export default function ListenPage() {
 
   if (!isPwa) {
     return (
-      <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+      <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-[100dvh]">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
             {config.ui.navigation.listen}
@@ -224,7 +226,7 @@ export default function ListenPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-[100dvh]">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           {config.ui.navigation.listen} Practice

@@ -7,7 +7,7 @@ export default function OfflinePage() {
   const { config, currentLanguage } = useLanguage();
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-[100dvh]">
       <div className="text-center py-12">
         <div className="mb-8">
           <svg 

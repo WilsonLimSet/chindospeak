@@ -54,6 +54,7 @@ import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { usePwa } from "@/shared/contexts/PwaContext";
 import { UnifiedAudioService } from "@/shared/utils/audioService";
 import { useWakeLock } from "@/shared/hooks/useWakeLock";
+import { useHaptic } from "@/shared/hooks/useHaptic";
 import { isAnswerCorrect } from "@/shared/utils/fuzzyMatch";
 import { Flashcard, Category, DriveQuizState, DriveQuizDirection } from "@/shared/types";
 import { Car, Square, Volume2, Mic, Loader2, Settings, ChevronDown } from "lucide-react";
@@ -73,7 +74,10 @@ export default function DrivePage() {
     [config.voiceOptions]
   );
 
+  useEffect(() => () => audioService.clearCache(), [audioService]);
+
   const wakeLock = useWakeLock();
+  const haptic = useHaptic();
 
   // Settings state
   const [showSettings, setShowSettings] = useState(true);
@@ -93,6 +97,7 @@ export default function DrivePage() {
   const [lastWasCorrect, setLastWasCorrect] = useState<boolean | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [tapMode, setTapMode] = useState(false); // iOS fallback mode
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   // Refs
   const cardQueueRef = useRef<Flashcard[]>([]);
@@ -199,6 +204,9 @@ export default function DrivePage() {
     };
 
     try {
+      // Abort any in-flight recognition session before starting a new one.
+      // Without this, an overlapping onend can fire handleAnswer twice for one utterance.
+      try { recognition.abort(); } catch { /* not running yet */ }
       recognition.start();
       setQuizState('listening');
 
@@ -297,6 +305,7 @@ export default function DrivePage() {
 
     if (!card || !isRunningRef.current) return;
 
+    haptic(correct ? "success" : "warning");
     setLastWasCorrect(correct);
 
     // Update spaced repetition (unless practice mode)
@@ -345,6 +354,14 @@ export default function DrivePage() {
   // Handle recognition errors
   const handleRecognitionError = useCallback(async (error: string) => {
     if (!isRunningRef.current) return;
+
+    // Permission denied is a hard stop — retrying just re-prompts the same denial.
+    if (error === 'not-allowed' || error === 'service-not-allowed') {
+      setPermissionDenied(true);
+      isRunningRef.current = false;
+      setQuizState('idle');
+      return;
+    }
 
     errorCountRef.current += 1;
 
@@ -456,6 +473,7 @@ export default function DrivePage() {
 
   // Start the quiz
   const handleStart = useCallback(async () => {
+    haptic("medium");
     // Load cards for review
     const listeningCards = localStorage.getFlashcardsForListeningReview();
     const speakingCards = localStorage.getFlashcardsForSpeakingReview();
@@ -543,6 +561,7 @@ export default function DrivePage() {
 
   // Stop the quiz
   const handleStop = useCallback(() => {
+    haptic("medium");
     isRunningRef.current = false;
     clearListeningTimeout();
 
@@ -620,7 +639,7 @@ export default function DrivePage() {
   // PWA check
   if (!isPwa) {
     return (
-      <div className="container mx-auto px-4 py-6 max-w-md min-h-screen flex items-center justify-center">
+      <div className="container mx-auto px-4 py-6 max-w-md min-h-[100dvh] flex items-center justify-center">
         <div className="text-center p-8">
           <Car className="w-16 h-16 mx-auto mb-4" style={{ color: config.theme.primary }} />
           <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
@@ -647,11 +666,24 @@ export default function DrivePage() {
   // Settings screen
   if (showSettings) {
     return (
-      <div className="container mx-auto px-4 py-6 max-w-md min-h-screen">
+      <div className="container mx-auto px-4 py-6 max-w-md min-h-[100dvh]">
         <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white flex items-center">
           <Car className="w-8 h-8 mr-3" style={{ color: config.theme.primary }} />
           {currentLanguage === 'chinese' ? '驾驶模式' : 'Drive Mode'}
         </h1>
+
+        {permissionDenied && (
+          <div className="rounded-lg p-4 mb-6 border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+            <p className="text-sm text-red-800 dark:text-red-300 font-medium mb-1">
+              {currentLanguage === 'chinese' ? '需要麦克风权限' : 'Microphone permission required'}
+            </p>
+            <p className="text-xs text-red-700 dark:text-red-400">
+              {currentLanguage === 'chinese'
+                ? '请在 Settings → Safari → 麦克风（或浏览器设置）中允许访问，然后重新载入页面。或切换到点按模式。'
+                : 'Allow microphone access in Settings → Safari → Microphone (or your browser settings) and reload, or switch to Tap mode below.'}
+            </p>
+          </div>
+        )}
 
         <div className={`rounded-lg p-4 mb-6 border ${tapMode ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'}`}>
           <p className={`text-sm ${tapMode ? 'text-amber-800 dark:text-amber-300' : 'text-blue-800 dark:text-blue-300'}`}>
@@ -778,7 +810,7 @@ export default function DrivePage() {
 
   // Active session - minimal UI
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-gray-900">
       {/* Status indicator */}
       <div className="flex-1 flex flex-col items-center justify-center">
         <div

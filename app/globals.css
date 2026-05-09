@@ -14,10 +14,83 @@
   }
 }
 
-body {
+html, body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  /* Prevent rubber-band on the page itself; scroll containers can opt back in. */
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Mobile-first interactive defaults: kill 300ms tap delay, the iOS gray flash,
+   and accidental text selection on press-and-hold. Inputs/textareas opt back in. */
+button,
+a,
+[role="button"],
+[role="tab"],
+[role="link"],
+label[for],
+summary {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Press feedback — applies broadly so we don't sweep 200+ onClick sites.
+   Uses :active so it fires synchronously on touchstart, which is what
+   makes a tap feel "physical" on mobile. */
+@media (hover: none) and (pointer: coarse) {
+  button:not(:disabled):active,
+  a:active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+    transition: transform 60ms ease-out;
+  }
+}
+
+/* Safe-area helpers for notch/home-indicator on iOS PWAs. */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Smooth momentum scrolling for any scrollable region that opts in. */
+.scroll-smooth-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* iOS auto-zooms form fields whose computed font-size is below 16px. Force 16px
+   minimum on touch devices so focus never triggers the unwanted zoom-in. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Custom scrollbar is a desktop affordance — hide on touch devices. */
+@media (pointer: coarse) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Swipe card animations */

@@ -4,81 +4,106 @@ import { useState, useEffect } from 'react';
 import { markPwaAsInstalled } from '@/shared/utils/pwaUtils';
 import { useLanguage } from '@/shared/contexts/LanguageContext';
 
+const DISMISS_KEY = 'install-prompt-dismissed-at';
+const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const { config } = useLanguage();
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e);
-      // Update UI to notify the user they can install the PWA
+      const evt = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(evt);
+
+      // Respect a recent dismissal — don't re-prompt every visit.
+      try {
+        const dismissed = window.localStorage.getItem(DISMISS_KEY);
+        if (dismissed && Date.now() - Number(dismissed) < SNOOZE_MS) {
+          return;
+        }
+      } catch {
+        // localStorage unavailable; show the prompt.
+      }
       setShowPrompt(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Check if app is already in standalone mode (installed)
-    if (window.matchMedia('(display-mode: standalone)').matches || 
-        ('standalone' in window.navigator && (window.navigator as any).standalone === true)) {
-      // Mark as installed
+    if (window.matchMedia('(display-mode: standalone)').matches ||
+        ('standalone' in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)) {
       markPwaAsInstalled();
     }
 
-    // Listen for app installed event
-    window.addEventListener('appinstalled', () => {
-      // Mark as installed when the app is installed
+    const handleInstalled = () => {
       markPwaAsInstalled();
-      // Hide the prompt
       setShowPrompt(false);
-      console.log('PWA was installed');
-    });
+    };
+    window.addEventListener('appinstalled', handleInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
     };
   }, []);
 
-  const handleInstallClick = () => {
-    // Hide the app provided install promotion
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
     setShowPrompt(false);
-    // Show the install prompt
-    deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
-    deferredPrompt.userChoice.then((choiceResult: {outcome: string}) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-        // Mark as installed
-        markPwaAsInstalled();
-      } else {
-        console.log('User dismissed the install prompt');
-      }
-      setDeferredPrompt(null);
-    });
+    await deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      markPwaAsInstalled();
+    }
+    setDeferredPrompt(null);
+  };
+
+  const handleDismiss = () => {
+    setShowPrompt(false);
+    try {
+      window.localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    } catch {
+      // ignore quota / private mode
+    }
   };
 
   if (!showPrompt) return null;
 
   return (
-    <div 
-      className="fixed bottom-4 left-4 right-4 text-white p-4 rounded-lg shadow-lg z-50"
-      style={{ backgroundColor: config.theme.primary }}
+    <div
+      className="fixed left-4 right-4 text-white p-4 rounded-lg shadow-lg z-50"
+      style={{
+        backgroundColor: config.theme.primary,
+        bottom: 'calc(1rem + env(safe-area-inset-bottom))',
+      }}
     >
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex justify-between items-center gap-3">
+        <div className="flex-1 min-w-0">
           <p className="font-medium">Install {config.ui.appName}</p>
           <p className="text-sm">Add to your home screen for the best experience with audio features</p>
         </div>
-        <button 
-          onClick={handleInstallClick}
-          className="bg-white px-4 py-2 rounded-md font-medium"
-          style={{ color: config.theme.primary }}
-        >
-          Install
-        </button>
+        <div className="flex flex-col gap-2 shrink-0">
+          <button
+            onClick={handleInstallClick}
+            className="bg-white px-4 py-2 rounded-md font-medium"
+            style={{ color: config.theme.primary }}
+          >
+            Install
+          </button>
+          <button
+            onClick={handleDismiss}
+            className="text-white/80 text-xs underline"
+          >
+            Not now
+          </button>
+        </div>
       </div>
     </div>
   );

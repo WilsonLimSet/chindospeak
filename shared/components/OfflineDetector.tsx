@@ -27,9 +27,14 @@ export default function OfflineDetector() {
   if (!isOffline) return null;
 
   return (
-    <div 
-      className="fixed bottom-0 left-0 right-0 text-black p-2 text-center text-sm z-50"
-      style={{ backgroundColor: '#fbbf24' }} // yellow-400
+    <div
+      className="fixed bottom-0 left-0 right-0 text-black px-2 text-center text-sm z-50"
+      style={{
+        backgroundColor: '#fbbf24',
+        paddingTop: '0.5rem',
+        paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))',
+      }}
+      role="status"
     >
       You are currently offline. Some features may be limited.
     </div>

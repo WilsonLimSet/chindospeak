@@ -36,7 +36,7 @@ function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-[100dvh] bg-white dark:bg-gray-900">
       <div className="container mx-auto px-6 py-12 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
           {/* Left side - Text content */}
@@ -208,7 +208,10 @@ function AppContent() {
 
     const notifSettings = localStorage.getNotificationSettings();
     const permission = getNotificationPermission();
-    if (isPwa && permission === 'default' && !notifSettings.lastPromptDate) {
+    // Only ask for notification permission once the user has done some reviewing.
+    // Asking on first launch tanks grant rates and feels intrusive.
+    const hasReviewed = activities.some((a) => a.reviewCount > 0);
+    if (isPwa && permission === 'default' && !notifSettings.lastPromptDate && hasReviewed) {
       setTimeout(() => setShowNotificationPrompt(true), 2000);
     }
 
@@ -363,7 +366,7 @@ function AppContent() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-screen">
+    <div className="container mx-auto px-4 py-6 max-w-md bg-white dark:bg-gray-900 min-h-[100dvh]">
       <div className="space-y-6">
         {streakData && (
           <StreakWarningBanner streakData={streakData} />
@@ -619,11 +622,18 @@ export default function HomePage() {
     setIsClient(true);
   }, []);
 
-  // Show nothing during SSR to avoid hydration mismatch
   if (!isClient) {
-    return null;
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+            C
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
+        </div>
+      </div>
+    );
   }
 
-  // Show landing page for web visitors, app content for PWA users
   return isPwa ? <AppContent /> : <LandingPage />;
 }

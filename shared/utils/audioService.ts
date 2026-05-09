@@ -1,5 +1,7 @@
 import { VoiceConfig } from '@/shared/types';
 
+const MAX_AUDIO_CACHE_ENTRIES = 30;
+
 export class UnifiedAudioService {
   private voiceOptions: VoiceConfig[];
   private currentAudio: HTMLAudioElement | null = null;
@@ -24,70 +26,63 @@ export class UnifiedAudioService {
   }
 
   /**
-   * Speaks the provided text using Edge TTS API
+   * Speaks the provided text using Edge TTS API; falls back to browser TTS.
    */
   async speak(text: string, rate: number = 1.0, _pitch: number = 1): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Cancel any ongoing audio
-        this.cancelSpeech();
+    this.cancelSpeech();
 
-        const lang = this.getPrimaryLang();
-        const cacheKey = this.getCacheKey(text, lang);
+    const lang = this.getPrimaryLang();
+    const cacheKey = this.getCacheKey(text, lang);
 
-        // Check cache first
-        let audioUrl = this.audioCache.get(cacheKey);
+    let audioUrl: string | undefined;
+    try {
+      audioUrl = this.audioCache.get(cacheKey);
 
-        if (!audioUrl) {
-          // Fetch from API
-          const response = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text, lang, rate }),
-          });
+      if (!audioUrl) {
+        const response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, lang, rate }),
+        });
 
-          if (!response.ok) {
-            throw new Error('TTS API request failed');
-          }
-
-          // Create blob URL from response
-          const blob = await response.blob();
-          audioUrl = URL.createObjectURL(blob);
-
-          // Cache the blob URL (limit cache size)
-          if (this.audioCache.size > 100) {
-            // Remove oldest entry
-            const firstKey = this.audioCache.keys().next().value;
-            if (firstKey) {
-              const oldUrl = this.audioCache.get(firstKey);
-              if (oldUrl) URL.revokeObjectURL(oldUrl);
-              this.audioCache.delete(firstKey);
-            }
-          }
-          this.audioCache.set(cacheKey, audioUrl);
+        if (!response.ok) {
+          throw new Error('TTS API request failed');
         }
 
-        // Create and play audio
-        const audio = new Audio(audioUrl);
-        this.currentAudio = audio;
+        const blob = await response.blob();
+        audioUrl = URL.createObjectURL(blob);
 
-        audio.onended = () => {
-          this.currentAudio = null;
-          resolve();
-        };
-
-        audio.onerror = () => {
-          this.currentAudio = null;
-          // Fallback to browser TTS if Edge TTS fails
-          this.speakFallback(text, rate).then(resolve).catch(reject);
-        };
-
-        await audio.play();
-      } catch (error) {
-        console.error('Edge TTS failed, falling back to browser TTS:', error);
-        // Fallback to browser TTS
-        this.speakFallback(text, rate).then(resolve).catch(reject);
+        // Smaller cap to limit memory pressure on mobile.
+        if (this.audioCache.size >= MAX_AUDIO_CACHE_ENTRIES) {
+          const firstKey = this.audioCache.keys().next().value;
+          if (firstKey) {
+            const oldUrl = this.audioCache.get(firstKey);
+            if (oldUrl) URL.revokeObjectURL(oldUrl);
+            this.audioCache.delete(firstKey);
+          }
+        }
+        this.audioCache.set(cacheKey, audioUrl);
       }
+    } catch {
+      return this.speakFallback(text, rate);
+    }
+
+    const audio = new Audio(audioUrl);
+    this.currentAudio = audio;
+
+    return new Promise<void>((resolve, reject) => {
+      audio.onended = () => {
+        this.currentAudio = null;
+        resolve();
+      };
+      audio.onerror = () => {
+        this.currentAudio = null;
+        this.speakFallback(text, rate).then(resolve).catch(reject);
+      };
+      audio.play().catch(() => {
+        this.currentAudio = null;
+        this.speakFallback(text, rate).then(resolve).catch(reject);
+      });
     });
   }
 

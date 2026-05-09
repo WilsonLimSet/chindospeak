@@ -72,8 +72,8 @@ export class UnifiedTranslationService {
   }
 
   private async translateWithBaidu(request: TranslationRequest): Promise<TranslationResponse> {
-    const BAIDU_APP_ID = process.env.NEXT_PUBLIC_BAIDU_APP_ID;
-    const BAIDU_API_KEY = process.env.NEXT_PUBLIC_BAIDU_API_KEY;
+    const BAIDU_APP_ID = process.env.BAIDU_APP_ID;
+    const BAIDU_API_KEY = process.env.BAIDU_API_KEY;
 
     if (!BAIDU_APP_ID || !BAIDU_API_KEY) {
       throw new Error('Baidu API credentials not configured');

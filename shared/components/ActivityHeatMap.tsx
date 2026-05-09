@@ -10,8 +10,17 @@ interface ActivityHeatMapProps {
   primaryColor: string;
 }
 
-// App launch date - only show activity from this date onwards
-const APP_START_DATE = new Date('2026-01-27');
+// Lower bound for the activity grid — start of the calendar month containing
+// the user's earliest activity. Falls back to the current month for new users.
+function getActivityStartDate(activities: DailyActivity[]): Date {
+  if (activities.length === 0) {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  const earliest = activities.reduce((min, a) => (a.date < min ? a.date : min), activities[0].date);
+  const d = new Date(earliest);
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
 
 function getIntensityLevel(reviewCount: number): number {
   if (reviewCount === 0) return 0;
@@ -48,10 +57,11 @@ export default function ActivityHeatMap({ activities, primaryColor }: ActivityHe
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [viewYear, setViewYear] = useState(today.getFullYear());
 
-  // Filter activities to only include those from APP_START_DATE onwards
+  const startDate = useMemo(() => getActivityStartDate(activities), [activities]);
+
   const filteredActivities = useMemo(() => {
-    return activities.filter(a => new Date(a.date) >= APP_START_DATE);
-  }, [activities]);
+    return activities.filter(a => new Date(a.date) >= startDate);
+  }, [activities, startDate]);
 
   // Create activity map for quick lookup
   const activityMap = useMemo(() => {
@@ -79,7 +89,7 @@ export default function ActivityHeatMap({ activities, primaryColor }: ActivityHe
       const dateStr = date.toISOString().split('T')[0];
 
       // Check if this date is before app start or in the future
-      if (date < APP_START_DATE || date > today) {
+      if (date < startDate || date > today) {
         days.push({ date: dateStr, reviewCount: -1, correctCount: 0 }); // -1 = inactive
       } else {
         const activity = activityMap.get(dateStr);
@@ -108,8 +118,8 @@ export default function ActivityHeatMap({ activities, primaryColor }: ActivityHe
   }, [viewYear, viewMonth, activityMap, today]);
 
   // Navigation handlers
-  const canGoBack = viewYear > APP_START_DATE.getFullYear() ||
-    (viewYear === APP_START_DATE.getFullYear() && viewMonth > APP_START_DATE.getMonth());
+  const canGoBack = viewYear > startDate.getFullYear() ||
+    (viewYear === startDate.getFullYear() && viewMonth > startDate.getMonth());
 
   const canGoForward = viewYear < today.getFullYear() ||
     (viewYear === today.getFullYear() && viewMonth < today.getMonth());
@@ -145,7 +155,8 @@ export default function ActivityHeatMap({ activities, primaryColor }: ActivityHe
           <button
             onClick={goToPreviousMonth}
             disabled={!canGoBack}
-            className={`p-1 rounded ${canGoBack ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
+            aria-label="Previous month"
+            className={`min-w-11 min-h-11 inline-flex items-center justify-center rounded ${canGoBack ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
           >
             <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </button>
@@ -155,7 +166,8 @@ export default function ActivityHeatMap({ activities, primaryColor }: ActivityHe
           <button
             onClick={goToNextMonth}
             disabled={!canGoForward}
-            className={`p-1 rounded ${canGoForward ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
+            aria-label="Next month"
+            className={`min-w-11 min-h-11 inline-flex items-center justify-center rounded ${canGoForward ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
           >
             <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </button>

@@ -36,28 +36,24 @@ interface LanguageProviderProps {
 }
 
 export function LanguageProvider({ children, defaultLanguage = 'chinese' }: LanguageProviderProps) {
-  // Initialize with saved language if available
-  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(() => {
-    if (typeof window !== 'undefined') {
-      const savedLanguage = localStorage.getItem('preferred-language') as SupportedLanguage;
-      if (savedLanguage && languageConfigs[savedLanguage]) {
-        return savedLanguage;
-      }
-    }
-    return defaultLanguage;
-  });
-  
-  const [service, setService] = useState<BaseLanguageService>(() => 
-    new languageConfigs[currentLanguage].service()
+  // Always initialize with the default on first render so server and client agree.
+  // The persisted preference is applied in useEffect below to avoid hydration mismatches.
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(defaultLanguage);
+  const [service, setService] = useState<BaseLanguageService>(() =>
+    new languageConfigs[defaultLanguage].service()
   );
-  
-  // Double-check on client side after hydration
+
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('preferred-language') as SupportedLanguage;
-    if (savedLanguage && languageConfigs[savedLanguage] && savedLanguage !== currentLanguage) {
-      setCurrentLanguage(savedLanguage);
-      setService(new languageConfigs[savedLanguage].service());
+    try {
+      const savedLanguage = localStorage.getItem('preferred-language') as SupportedLanguage | null;
+      if (savedLanguage && languageConfigs[savedLanguage] && savedLanguage !== currentLanguage) {
+        setCurrentLanguage(savedLanguage);
+        setService(new languageConfigs[savedLanguage].service());
+      }
+    } catch {
+      // localStorage may be unavailable (private mode); fall back to default.
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const switchLanguage = (language: SupportedLanguage) => {

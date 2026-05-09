@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { UnifiedAudioService } from '@/shared/utils/audioService';
+import { useHaptic } from '@/shared/hooks/useHaptic';
 import { VoiceConfig } from '@/shared/types';
 
 interface AudioButtonProps {
@@ -31,6 +32,7 @@ export default function AudioButton({
   const [isPlayingInternal, setIsPlayingInternal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioService] = useState(() => new UnifiedAudioService(voiceConfig));
+  const haptic = useHaptic();
   
   // Use external playing state if provided, otherwise use internal state
   const isPlaying = isPlayingExternal !== undefined ? isPlayingExternal : isPlayingInternal;
@@ -43,6 +45,7 @@ export default function AudioButton({
   }, [isPlayingExternal]);
 
   const handlePlay = async () => {
+    haptic("light");
     if (isPlaying) {
       audioService.cancelSpeech();
       setIsPlayingInternal(false);
@@ -71,11 +74,12 @@ export default function AudioButton({
     lg: 'h-6 w-6'
   }[size];
 
-  // Determine button size based on the size prop
+  // Determine button size based on the size prop. Even the sm variant gets a
+  // 44px minimum touch target so it stays tappable on mobile.
   const buttonSizeClass = {
-    sm: 'p-1',
-    md: 'p-2',
-    lg: 'p-3'
+    sm: 'p-1 min-w-11 min-h-11',
+    md: 'p-2 min-w-11 min-h-11',
+    lg: 'p-3 min-w-12 min-h-12'
   }[size];
 
   const renderIcon = () => {
