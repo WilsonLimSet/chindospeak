@@ -58,6 +58,9 @@ export default function Navigation() {
             <NavLink href="/speak" current={pathname === "/speak"} config={config}>
               {config.ui.navigation.speak}
             </NavLink>
+            <NavLink href="/video" current={pathname === "/video"} config={config}>
+              Video
+            </NavLink>
             <NavLink href="/manage" current={pathname === "/manage"} config={config}>
               {config.ui.navigation.manage}
             </NavLink>

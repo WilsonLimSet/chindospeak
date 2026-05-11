@@ -1,6 +1,6 @@
-# ChindoSpeak - Unified Language Learning Platform
+# ChindoSpeak
 
-A unified Progressive Web App (PWA) architecture for language learning applications, supporting multiple languages with shared components and language-specific configurations.
+ChindoSpeak is a Progressive Web App for learning Mandarin Chinese and Indonesian with flashcards, listening practice, speaking review, drive mode, and short-form video imports.
 
 ## Architecture Overview
 
@@ -27,6 +27,12 @@ chindospeak/
 ```
 
 ## Key Features
+
+- **Learn from Video**: paste a TikTok, Instagram Reel, or YouTube Short and generate a transcript, translation, phrase drill, speaking prompt, and review-ready flashcards.
+- **Spaced Repetition Flashcards**: separate reading, listening, and speaking review levels.
+- **Listening and Speaking Practice**: practice saved cards with audio and speech recognition.
+- **Drive Mode**: hands-free review for cards that are due.
+- **Offline PWA**: installable mobile experience with local-first card storage.
 
 ### Unified Components
 - **PwaWrapper**: PWA installation handling
@@ -72,17 +78,24 @@ Unified text-to-speech system with:
    npm install
    ```
 
-2. Set up environment variables for translation services:
+2. Install local video tooling for the video import feature:
    ```bash
-   # For Chinese (Baidu Translate)
-   NEXT_PUBLIC_BAIDU_APP_ID=your_app_id
-   NEXT_PUBLIC_BAIDU_API_KEY=your_api_key
+   brew install yt-dlp ffmpeg
    ```
 
-3. Run the development server:
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Add `OPENAI_API_KEY` to `.env.local` for video transcription, OCR, vocab extraction, and speaking prompts. Baidu and Google translation keys are optional.
+
+4. Run the development server:
    ```bash
    npm run dev
    ```
+
+5. Open [http://localhost:3000](http://localhost:3000).
 
 ## Adding a New Language
 
@@ -98,11 +111,13 @@ The original language-specific apps have been analyzed and their common componen
 
 ## Technology Stack
 
-- **Next.js 15** - React framework
+- **Next.js 16** - React framework
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Styling
 - **PWA** - Offline capability
 - **Web Speech API** - Text-to-speech
+- **OpenAI Whisper + GPT-4o-mini** - Video transcription, OCR reconciliation, lesson generation
+- **yt-dlp + ffmpeg** - Local short-form video processing
 - **Multiple Translation APIs** - Baidu, MyMemory, Google (extensible)
 
 ## License

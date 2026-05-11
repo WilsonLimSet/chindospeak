@@ -8,7 +8,7 @@ import { usePwa } from "@/shared/contexts/PwaContext";
 import PwaWrapper from "@/shared/components/PwaWrapper";
 import { Flashcard, Category, StreakData, DailyChallenge, DailyActivity } from "@/shared/types";
 import isChinese from 'is-chinese';
-import { PlusCircle, Car, Headphones, Mic, BookOpen } from 'lucide-react';
+import { PlusCircle, Car, Headphones, Mic, BookOpen, Clapperboard } from 'lucide-react';
 import Link from 'next/link';
 import StreakDisplay from '@/shared/components/StreakDisplay';
 import StreakWarningBanner from '@/shared/components/StreakWarningBanner';
@@ -108,6 +108,17 @@ function LandingPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Smart Flashcards</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Spaced repetition for long-term retention</p>
+                </div>
+              </div>
+
+              {/* Video Import Feature */}
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-900 flex items-center justify-center flex-shrink-0">
+                  <Clapperboard className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">Learn from Videos</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Turn short clips into review-ready cards</p>
                 </div>
               </div>
 
@@ -379,6 +390,28 @@ function AppContent() {
             primaryColor={config.theme.primary}
           />
         )}
+
+        <Link
+          href="/video"
+          className="block rounded-xl border border-violet-200 bg-violet-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-violet-900 dark:bg-violet-950"
+        >
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white">
+              <Clapperboard className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-200">
+                New
+              </p>
+              <h2 className="text-lg font-bold text-gray-950 dark:text-white">
+                Learn from a short video
+              </h2>
+              <p className="mt-1 text-sm leading-5 text-gray-600 dark:text-gray-300">
+                Paste a Reel, TikTok, or Short and save useful words straight into your {config.name} deck.
+              </p>
+            </div>
+          </div>
+        </Link>
 
         {/* Create Form Section */}
         <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
