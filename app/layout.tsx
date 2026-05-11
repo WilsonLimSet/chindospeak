@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ChindoSpeak - Language Learning",
-  description: "Learn Chinese and Indonesian with spaced repetition flashcards",
+  description: "Learn from short videos, flashcards, listening practice, and speaking review",
   manifest: "/manifest.json",
   icons: {
     icon: '/favicon.ico',
