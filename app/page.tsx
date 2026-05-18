@@ -8,7 +8,7 @@ import { usePwa } from "@/shared/contexts/PwaContext";
 import PwaWrapper from "@/shared/components/PwaWrapper";
 import { Flashcard, Category, StreakData, DailyChallenge, DailyActivity } from "@/shared/types";
 import isChinese from 'is-chinese';
-import { PlusCircle, Car, Headphones, Mic, BookOpen, Clapperboard } from 'lucide-react';
+import { PlusCircle, Car, Clapperboard } from 'lucide-react';
 import Link from 'next/link';
 import StreakDisplay from '@/shared/components/StreakDisplay';
 import StreakWarningBanner from '@/shared/components/StreakWarningBanner';
@@ -19,136 +19,149 @@ import NotificationPermissionPrompt from '@/shared/components/NotificationPermis
 import { generateDailyChallenge } from '@/shared/utils/challengeGenerator';
 import { notifyDueCards, getNotificationPermission } from '@/shared/utils/notificationUtils';
 
-// Landing page for web visitors
+// Marketing landing page for non-installed visitors.
+// The installed-PWA experience (AppContent below) is unchanged.
 function LandingPage() {
-  const { config } = useLanguage();
-  const { showInstallPrompt } = usePwa();
-  const [isMobile, setIsMobile] = useState(false);
+  return (
+    <div className="min-h-[100dvh] bg-white dark:bg-gray-950 text-gray-900 dark:text-white">
+      <Hero />
+      <Features />
+      <Pricing />
+      <FAQ />
+      <Footer />
+    </div>
+  );
+}
 
-  useEffect(() => {
-    // Check if mobile device
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+function Hero() {
+  return (
+    <section className="container mx-auto px-6 pt-24 pb-24 max-w-2xl">
+      <img
+        src="/icons/icon-512x512.png"
+        alt="ChindoSpeak"
+        className="w-16 h-16 rounded-2xl mb-12"
+      />
+      <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mb-6 leading-[1.1]">
+        Mandarin and Indonesian, from the reels you already watch.
+      </h1>
+      <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+        Paste a TikTok, Instagram reel, or YouTube short. ChindoSpeak transcribes it and pulls out the phrases worth learning. Spaced repetition handles the rest.
+      </p>
+      <p className="mt-10 text-sm text-gray-500">
+        iPhone. Coming later this year.
+      </p>
+    </section>
+  );
+}
+
+function Features() {
+  return (
+    <section className="container mx-auto px-6 py-16 max-w-2xl border-t border-gray-200 dark:border-gray-800">
+      <div className="space-y-14">
+        <FeatureBlock title="Reels in, flashcards out.">
+          Whisper transcribes the audio, GPT-4o-mini cleans the transcript and picks the five most useful phrases. Around 40 seconds per video. Works on Instagram, TikTok, and YouTube Shorts.
+        </FeatureBlock>
+
+        <FeatureBlock title="Three skill tracks.">
+          Reading, listening, and speaking are graded independently. Spaced repetition runs on each track separately, so you actually use a word — not just recognize it.
+        </FeatureBlock>
+
+        <FeatureBlock title="Hands-free drive mode.">
+          Audio prompts and spoken answers. Apple's on-device speech recognition does the grading. The mic data never leaves your phone.
+        </FeatureBlock>
+
+        <FeatureBlock title="Built for heritage speakers.">
+          The vocab, pacing, and example sentences assume you've already heard these languages your whole life — and just need to bridge the gap from understanding to speaking.
+        </FeatureBlock>
+      </div>
+    </section>
+  );
+}
+
+function FeatureBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-xl font-semibold mb-3">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{children}</p>
+    </div>
+  );
+}
+
+function Pricing() {
+  return (
+    <section className="container mx-auto px-6 py-16 max-w-2xl border-t border-gray-200 dark:border-gray-800">
+      <p className="text-2xl md:text-3xl font-semibold mb-6">
+        $9.99 / month or $79.99 / year.
+      </p>
+      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+        Three days free. Auto-renews until you cancel from your iPhone settings. Apple handles billing.
+      </p>
+    </section>
+  );
+}
+
+function FAQ() {
+  const items = [
+    {
+      q: 'What\'s a Chindo?',
+      a: 'Chinese-Indonesian. ChindoSpeak is built for heritage speakers whose families speak Mandarin and Indonesian.',
+    },
+    {
+      q: 'How is this different from Duolingo?',
+      a: 'Duolingo teaches you a new language from scratch. ChindoSpeak helps you finish a language you already half-understand. The vocabulary, pacing, and example sentences are tuned for heritage learners.',
+    },
+    {
+      q: 'Can it really pull vocab from any reel?',
+      a: 'Yes for Instagram, TikTok, and YouTube Shorts. Heavy slang or low audio quality can produce worse results, but the pipeline is OpenAI Whisper + GPT-4o-mini.',
+    },
+    {
+      q: 'Does it work offline?',
+      a: 'Reviewing existing flashcards works offline. Importing videos, translating new text, and generating voice audio need an internet connection.',
+    },
+    {
+      q: 'Why a subscription?',
+      a: 'Each video import costs real money in transcription and translation API calls. The subscription covers those costs.',
+    },
+    {
+      q: 'Android?',
+      a: 'iOS first. Android may come later.',
+    },
+  ];
 
   return (
-    <div className="min-h-[100dvh] bg-white dark:bg-gray-900">
-      <div className="container mx-auto px-6 py-12 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
-          {/* Left side - Text content */}
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-              ChindoSpeak
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-              For Chindos leveling up Mandarin & Indonesian.
-            </p>
-
-            {/* Languages */}
-            <div className="flex gap-6 mb-8">
-              <div>
-                <p className="text-3xl font-bold" style={{ color: '#DC2626' }}>中文</p>
-                <p className="text-sm text-gray-500">Mandarin Chinese</p>
-              </div>
-              <div className="border-l border-gray-300 dark:border-gray-600 pl-6">
-                <p className="text-3xl font-bold" style={{ color: '#059669' }}>Bahasa</p>
-                <p className="text-sm text-gray-500">Indonesian</p>
-              </div>
-            </div>
-
-            {/* CTA - different for mobile vs desktop */}
-            {isMobile ? (
-              <>
-                <button
-                  onClick={showInstallPrompt}
-                  className="px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:opacity-90 text-white mb-4"
-                  style={{ backgroundColor: config.theme.primary }}
-                >
-                  Add to Home Screen
-                </button>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Free PWA · Works offline · No account needed
-                </p>
-              </>
-            ) : (
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 inline-block">
-                <p className="text-gray-700 dark:text-gray-300 font-medium">
-                  Open on mobile to install as an app
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Free PWA · Works offline · No account needed
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Right side - Feature preview */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
-            <div className="space-y-6">
-              {/* Drive Mode Feature */}
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center flex-shrink-0">
-                  <Car className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Drive Mode</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Hands-free audio quizzes with voice recognition</p>
-                </div>
-              </div>
-
-              {/* Flashcards Feature */}
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Smart Flashcards</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Spaced repetition for long-term retention</p>
-                </div>
-              </div>
-
-              {/* Video Import Feature */}
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-900 flex items-center justify-center flex-shrink-0">
-                  <Clapperboard className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Learn from Videos</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Turn short clips into review-ready cards</p>
-                </div>
-              </div>
-
-              {/* Listening Feature */}
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center flex-shrink-0">
-                  <Headphones className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Listening Practice</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Train your ear with native pronunciation</p>
-                </div>
-              </div>
-
-              {/* Speaking Feature */}
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center flex-shrink-0">
-                  <Mic className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Speaking Practice</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Practice pronunciation with feedback</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <section className="container mx-auto px-6 py-16 max-w-2xl border-t border-gray-200 dark:border-gray-800">
+      <div className="space-y-1">
+        {items.map((item) => (
+          <details
+            key={item.q}
+            className="group border-b border-gray-200 dark:border-gray-800 last:border-b-0"
+          >
+            <summary className="flex items-start justify-between cursor-pointer list-none py-5 gap-6">
+              <span className="font-medium">{item.q}</span>
+              <span className="text-gray-400 group-open:rotate-45 transition-transform text-xl leading-none flex-shrink-0">+</span>
+            </summary>
+            <p className="pb-5 text-gray-600 dark:text-gray-400 leading-relaxed">{item.a}</p>
+          </details>
+        ))}
       </div>
+    </section>
+  );
+}
 
-    </div>
+function Footer() {
+  return (
+    <footer className="border-t border-gray-200 dark:border-gray-800">
+      <div className="container mx-auto px-6 py-10 max-w-2xl flex flex-col md:flex-row justify-between items-start gap-4 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+          <a href="mailto:wilsonlimsetiawan@gmail.com" className="hover:text-gray-900 dark:hover:text-white">wilsonlimsetiawan@gmail.com</a>
+          <a href="https://instagram.com/chengyuapp" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 dark:hover:text-white">@chengyuapp</a>
+        </div>
+        <nav className="flex gap-6">
+          <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white">Terms</Link>
+          <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white">Privacy</Link>
+        </nav>
+      </div>
+    </footer>
   );
 }
 
