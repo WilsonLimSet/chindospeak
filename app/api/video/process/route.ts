@@ -11,7 +11,7 @@ import OpenAI from "openai";
 const execFileAsync = promisify(execFile);
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 type LessonJson = {
   language?: string;
@@ -42,6 +42,28 @@ type LessonJson = {
 };
 
 export async function POST(req: NextRequest) {
+  // When VIDEO_SERVICE_URL is set (e.g. on Vercel, whose serverless runtime
+  // can't run yt-dlp/ffmpeg), forward the request to a host that can. That
+  // host runs this same route *without* VIDEO_SERVICE_URL, so it performs
+  // the real download + transcription.
+  const proxyTarget = process.env.VIDEO_SERVICE_URL;
+  if (proxyTarget) {
+    const rawBody = await req.text();
+    const upstream = await fetch(
+      `${proxyTarget.replace(/\/$/, "")}/api/video/process`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: rawBody,
+      },
+    );
+    const text = await upstream.text();
+    return new NextResponse(text, {
+      status: upstream.status,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       { error: "Missing OPENAI_API_KEY in .env.local" },
