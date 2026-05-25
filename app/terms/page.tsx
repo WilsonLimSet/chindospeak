@@ -20,7 +20,7 @@ export default function TermsPage() {
 
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Terms of Service</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-12">
-          Last updated: May 18, 2026
+          Last updated: May 25, 2026
         </p>
 
         <div className="prose prose-gray dark:prose-invert max-w-none space-y-6 leading-relaxed">
@@ -57,7 +57,7 @@ export default function TermsPage() {
               When you create or import flashcards, paste video URLs, or otherwise input text into ChindoSpeak, that content remains yours. We store this data locally on your device. Imported video content is processed on our servers temporarily for transcription and translation, then discarded.
             </p>
             <p>
-              You are responsible for ensuring that any content you import (such as Instagram or TikTok videos) does not violate the rights of third parties. ChindoSpeak does not store, redistribute, or share video content with anyone.
+              You are responsible for ensuring that any content you import (such as Instagram Reels or YouTube Shorts) does not violate the rights of third parties. ChindoSpeak does not store, redistribute, or share video content with anyone.
             </p>
           </section>
 

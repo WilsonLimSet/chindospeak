@@ -20,29 +20,41 @@ export default function PrivacyPage() {
 
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Privacy Policy</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-12">
-          Last updated: May 18, 2026
+          Last updated: May 25, 2026
         </p>
 
         <div className="space-y-6 leading-relaxed">
           <div className="rounded-2xl bg-gray-50 dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 mb-8">
             <h2 className="text-lg font-bold mb-2">The short version</h2>
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              ChindoSpeak doesn't ask for your name, email, phone number, or any personal information. There are no user accounts. All your flashcards live locally on your device. We don't sell, share, or analyze your data. We use third-party services for subscription billing, voice generation, translation, and transcription — they each have their own privacy policies linked below.
+              ChindoSpeak doesn't ask for your name, email, phone number, or any personal information. There are no user accounts. All your flashcards live locally on your device. We collect anonymous crash reports and product-usage events so we can fix bugs — you can turn that off in <strong>Account → Settings → Diagnostics &amp; Usage</strong>. We do not show ads, do not use the Apple Advertising Identifier, and do not show the "Allow Tracking" prompt.
             </p>
           </div>
 
           <section>
-            <h2 className="text-xl font-bold mb-3">1. What we collect</h2>
+            <h2 className="text-xl font-bold mb-3">1. What we don't collect</h2>
             <p className="mb-3">
-              We do not collect, store, or process any personally identifiable information through ChindoSpeak. Specifically:
+              We do not collect any personally identifiable information through ChindoSpeak:
             </p>
             <ul className="space-y-2 list-disc pl-6">
               <li>No name, email, phone number, or date of birth</li>
               <li>No user accounts or login</li>
-              <li>No analytics or behavioural tracking SDKs</li>
-              <li>No advertising identifiers</li>
+              <li>No advertising identifiers (IDFA) — no "Allow Tracking" prompt</li>
               <li>No location data</li>
               <li>No contacts, photos, or messages</li>
+              <li>No microphone or camera access in v1</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold mb-3">1a. What we do collect (anonymously)</h2>
+            <p className="mb-3">
+              To fix bugs and prioritise features, we collect the following via PostHog. Everything is tied to a random per-device ID — never to you personally. Toggle off any time at <strong>Account → Settings → Diagnostics &amp; Usage</strong>:
+            </p>
+            <ul className="space-y-2 list-disc pl-6">
+              <li><strong>Crash reports</strong> — stack traces, device model, OS version, app version</li>
+              <li><strong>Anonymous product-usage events</strong> — e.g. "video imported", "review session completed"</li>
+              <li><strong>Session replays</strong> — anonymised screen-interaction traces with all text inputs and images masked. Used to debug specific user-reported issues</li>
             </ul>
           </section>
 
@@ -99,10 +111,26 @@ export default function PrivacyPage() {
               </div>
 
               <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                <h3 className="font-semibold mb-1">Vercel (hosting)</h3>
+                <h3 className="font-semibold mb-1">Google Cloud Run (video-import backend)</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Our backend (api.chindospeak.com) runs on Vercel. Standard server logs (IP, timestamp, request path) may be retained briefly for security and debugging. See{" "}
+                  The video-import endpoint runs on Google Cloud Run in Singapore. Standard server logs (IP, timestamp, request path, video URL) may be retained briefly for security and debugging. See{" "}
+                  <a href="https://cloud.google.com/terms/cloud-privacy-notice" className="underline">Google Cloud's privacy notice</a>.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <h3 className="font-semibold mb-1">Vercel (marketing site)</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This website (chindospeak.com) is hosted on Vercel. Standard server logs apply. See{" "}
                   <a href="https://vercel.com/legal/privacy-policy" className="underline">Vercel's privacy policy</a>.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <h3 className="font-semibold mb-1">PostHog (anonymous diagnostics)</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Crash reports, anonymous product-usage events, and masked session replays. Tied to a random per-device ID, never to you. Opt out any time in Account → Settings → Diagnostics &amp; Usage. See{" "}
+                  <a href="https://posthog.com/privacy" className="underline">PostHog's privacy policy</a>.
                 </p>
               </div>
             </div>
@@ -110,14 +138,9 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xl font-bold mb-3">4. Permissions the iOS app asks for</h2>
-            <ul className="space-y-2 list-disc pl-6">
-              <li>
-                <strong>Microphone</strong> — used only when you start Drive Mode, to listen for your spoken answers. Audio is processed by Apple's on-device speech recognition; it never leaves your phone.
-              </li>
-              <li>
-                <strong>Speech Recognition</strong> — required to grade your spoken answers in Drive Mode. On-device only.
-              </li>
-            </ul>
+            <p>
+              In v1, the iOS app does not request the microphone, camera, location, contacts, or any other system permissions. Future versions may add an opt-in microphone permission for hands-free voice practice; you will see the standard iOS permission prompt before that ever happens.
+            </p>
           </section>
 
           <section>

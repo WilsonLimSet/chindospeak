@@ -97,6 +97,61 @@ Unified text-to-speech system with:
 
 5. Open [http://localhost:3000](http://localhost:3000).
 
+## Deploying the backend (Cloud Run)
+
+The iOS app at `~/chindospeak-ios` calls `/api/video/process`, `/api/translate`,
+`/api/tts`, and `/api/pinyin` on the Cloud Run service
+`chindospeak-backend-1004724780099.asia-southeast1.run.app`. The marketing
+site (the rest of this repo) stays on Vercel; Cloud Run runs the same code
+for the API routes because yt-dlp + ffmpeg + a JS runtime are needed for
+video processing and Vercel's serverless runtime can't ship those. Vercel
+can optionally proxy `/api/video/process` to Cloud Run by setting
+`VIDEO_SERVICE_URL` (see the top of `app/api/video/process/route.ts`).
+
+### One-time setup
+
+```bash
+gcloud auth login
+gcloud config set project chindospeak-backend
+```
+
+### Drop cookies in place (required for IG Reels + YouTube Shorts)
+
+Both Instagram and YouTube block requests from Cloud Run IPs unless
+authenticated. See `cookies/README.txt` for the export commands — easiest is:
+
+```bash
+yt-dlp --cookies-from-browser chrome --cookies cookies/youtube_cookies.txt \
+    --skip-download 'https://www.youtube.com/'
+yt-dlp --cookies-from-browser chrome --cookies cookies/instagram_cookies.txt \
+    --skip-download 'https://www.instagram.com/'
+```
+
+Then filter each to just the relevant domains (per `cookies/README.txt`).
+The files are gitignored and re-included in `.gcloudignore` so they ship
+to Cloud Run without ever landing on GitHub.
+
+### Deploy
+
+```bash
+gcloud run deploy chindospeak-backend \
+  --source . \
+  --region asia-southeast1 \
+  --allow-unauthenticated \
+  --memory 1Gi \
+  --cpu 1 \
+  --timeout 90
+```
+
+Cloud Run reads the `Dockerfile`, builds the image, pushes it to Artifact
+Registry, and rolls out a new revision. First deploy ~5 min; subsequent
+deploys reuse cached layers and take ~2 min.
+
+### Refreshing cookies
+
+When imports start failing with "needs fresh login cookies", re-run the
+extraction commands above and redeploy.
+
 ## Adding a New Language
 
 1. Create a new language configuration in `language-configs/`

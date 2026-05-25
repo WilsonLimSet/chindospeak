@@ -21,18 +21,27 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=8080
 
-# ffmpeg for audio extraction; python3 + yt-dlp for video download.
+# Video pipeline tooling:
+#   - ffmpeg: audio extraction + frame OCR for subtitle reconciliation
+#   - yt-dlp: video download (binary direct from GitHub for newest extractor)
+#   - deno: yt-dlp's required JS runtime for YouTube extraction (since 2025+)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ffmpeg python3 ca-certificates curl \
+      ffmpeg python3 ca-certificates curl unzip \
     && rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
       -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
+RUN curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh -s -- -y
 
 # Next.js standalone output: a pruned server + only the deps it needs.
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+
+# yt-dlp cookies for Instagram + YouTube. The .txt files are gitignored
+# (and re-included as exceptions in .gcloudignore) so they upload to Cloud
+# Run but never end up on GitHub. See cookies/README.txt for refresh flow.
+COPY cookies ./cookies
 
 EXPOSE 8080
 CMD ["node", "server.js"]

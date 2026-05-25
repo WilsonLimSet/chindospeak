@@ -246,22 +246,45 @@ async function downloadVideo(url: string, outputTemplate: string) {
     url,
   ];
 
-  try {
-    return await runYtDlp(baseArgs);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    const shouldTryBrowserCookies =
-      url.includes("instagram.com") ||
-      message.includes("This content isn't available") ||
-      message.includes("login") ||
-      message.includes("cookies");
-
-    if (!shouldTryBrowserCookies) {
-      throw err;
-    }
-
-    return await runYtDlp(["--cookies-from-browser", "chrome", ...baseArgs]);
+  // Both Instagram and YouTube now require auth for requests from Cloud Run
+  // IP ranges (anti-bot blocklists). If a host-matched cookies file is
+  // present in the container, use it from the first attempt — the no-cookie
+  // path is essentially guaranteed to fail and wastes ~5s per request.
+  const cookiesPath = await resolveCookiesPathForUrl(url);
+  if (cookiesPath) {
+    return await runYtDlp(["--cookies", cookiesPath, ...baseArgs]);
   }
+
+  return await runYtDlp(baseArgs);
+}
+
+/// Returns the cookies file path appropriate for the URL's host:
+///   instagram.com → cookies/instagram_cookies.txt
+///   youtube.com   → cookies/youtube_cookies.txt
+///   youtu.be      → cookies/youtube_cookies.txt
+///
+/// In Cloud Run the files live under /app/cookies/ (Dockerfile COPYs the
+/// dir). In local dev they live next to the repo root. Returns null when
+/// no matching file is present so the caller can decide what to do.
+async function resolveCookiesPathForUrl(url: string): Promise<string | null> {
+  let basename: string | null = null;
+  if (url.includes("instagram.com")) {
+    basename = "instagram_cookies.txt";
+  } else if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    basename = "youtube_cookies.txt";
+  }
+  if (!basename) return null;
+
+  const candidates = [
+    `/app/cookies/${basename}`,
+    path.join(process.cwd(), "cookies", basename),
+  ];
+  for (const candidate of candidates) {
+    if (await fileExists(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
 }
 
 async function runYtDlp(args: string[]) {
@@ -422,12 +445,33 @@ function humanizeError(err: unknown) {
     return "ffmpeg is missing or unavailable. Run: brew install ffmpeg";
   }
 
+  // Instagram session expired or cookies missing entirely.
+  if (
+    message.includes("instagram.com") &&
+    (message.includes("login") ||
+      message.includes("Sign in") ||
+      message.includes("Empty cookies file") ||
+      message.includes("rate-limit"))
+  ) {
+    return "This Instagram Reel needs fresh login cookies. Ask Wilson to refresh them.";
+  }
+
+  // YouTube anti-bot challenge — same fix as Instagram, different cookies file.
+  if (
+    (message.includes("youtube.com") || message.includes("youtu.be")) &&
+    (message.includes("Sign in to confirm") ||
+      message.includes("confirm you're not a bot") ||
+      message.includes("confirm you’re not a bot"))
+  ) {
+    return "This YouTube Short needs fresh login cookies. Ask Wilson to refresh them.";
+  }
+
   if (message.includes("Command failed") || message.includes("Unable to")) {
-    return `Could not download this video. If this is Instagram, open the Reel in Chrome while logged in, then try again. Otherwise try a public YouTube Short backup. Details: ${message}`;
+    return `Could not download this video. Try a different Reel or YouTube Short. Details: ${message}`;
   }
 
   if (message.includes("timed out")) {
-    return "The download took too long. Try a shorter clip for the demo.";
+    return "The download took too long. Try a shorter clip.";
   }
 
   return message || "Processing failed.";

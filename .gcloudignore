@@ -1,0 +1,23 @@
+# gcloud uses this file (NOT .gitignore) to decide what to upload as the
+# build source. The defaults inherit .gitignore behaviour, which would
+# strip our yt-dlp cookies files — but we need them inside the container.
+# Re-include them here.
+
+.git
+.github
+.next
+.vercel
+.idea
+.vscode
+node_modules
+test-indonesian-import.json
+README.md
+*.tsbuildinfo
+**/.DS_Store
+.env*.local
+
+# Cookies are gitignored to keep them off GitHub, but we DO want them in
+# the Cloud Run image. The `!cookies/...` rule overrides the default
+# .gitignore inheritance.
+!cookies/instagram_cookies.txt
+!cookies/youtube_cookies.txt
