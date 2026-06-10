@@ -31,6 +31,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# yt-dlp cookies — contain live session tokens; must never reach this public
+# repo. The Cloud Run build re-includes them via .gcloudignore (!cookies/...).
+cookies/*.txt
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

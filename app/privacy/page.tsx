@@ -49,12 +49,23 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-bold mb-3">1a. What we do collect (anonymously)</h2>
             <p className="mb-3">
-              To fix bugs and prioritise features, we collect the following via PostHog. Everything is tied to a random per-device ID — never to you personally. Toggle off any time at <strong>Account → Settings → Diagnostics &amp; Usage</strong>:
+              To fix bugs and prioritise features, we collect the following via PostHog. Everything is tied to a random per-device ID — never to you personally. You control all of it in <strong>Account → Settings → Diagnostics &amp; Usage</strong> (see <a href="#your-choices" className="underline">Your choices</a> below):
             </p>
             <ul className="space-y-2 list-disc pl-6">
               <li><strong>Crash reports</strong> — stack traces, device model, OS version, app version</li>
               <li><strong>Anonymous product-usage events</strong> — e.g. "video imported", "review session completed"</li>
-              <li><strong>Session replays</strong> — anonymised screen-interaction traces with all text inputs and images masked. Used to debug specific user-reported issues</li>
+              <li><strong>Session replays</strong> — off by default; opt-in only. If you turn them on, we record anonymised on-screen interactions with all text and images masked. Used to debug specific user-reported issues</li>
+            </ul>
+          </section>
+
+          <section id="your-choices">
+            <h2 className="text-xl font-bold mb-3">1b. Your choices</h2>
+            <p className="mb-3">
+              You control everything we collect from <strong>Account → Settings → Diagnostics &amp; Usage</strong>. The controls are separate:
+            </p>
+            <ul className="space-y-2 list-disc pl-6">
+              <li><strong>Analytics &amp; crash reporting</strong> — on by default. You can opt out by turning the <strong>"Share anonymous diagnostics"</strong> toggle off.</li>
+              <li><strong>Session replays</strong> — off by default. They are only recorded if you turn on <strong>"Share session replays"</strong> in that same Settings section.</li>
             </ul>
           </section>
 
@@ -129,7 +140,7 @@ export default function PrivacyPage() {
               <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4">
                 <h3 className="font-semibold mb-1">PostHog (anonymous diagnostics)</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Crash reports, anonymous product-usage events, and masked session replays. Tied to a random per-device ID, never to you. Opt out any time in Account → Settings → Diagnostics &amp; Usage. See{" "}
+                  Crash reports, anonymous product-usage events, and masked session replays. Tied to a random per-device ID, never to you. Analytics and crash reporting are on by default and can be turned off, and session replays are off by default and opt-in only — all controlled in Account → Settings → Diagnostics &amp; Usage. See{" "}
                   <a href="https://posthog.com/privacy" className="underline">PostHog's privacy policy</a>.
                 </p>
               </div>
@@ -168,8 +179,8 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-bold mb-3">8. Contact</h2>
             <p>
               Privacy questions? Email{" "}
-              <a href="mailto:wilsonlimsetiawan@gmail.com" className="underline">
-                wilsonlimsetiawan@gmail.com
+              <a href="mailto:wilsonlimset@gmail.com" className="underline">
+                wilsonlimset@gmail.com
               </a>
               .
             </p>

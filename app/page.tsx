@@ -153,10 +153,11 @@ function Footer() {
     <footer className="border-t border-gray-200 dark:border-gray-800">
       <div className="container mx-auto px-6 py-10 max-w-2xl flex flex-col md:flex-row justify-between items-start gap-4 text-sm text-gray-500 dark:text-gray-400">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-          <a href="mailto:wilsonlimsetiawan@gmail.com" className="hover:text-gray-900 dark:hover:text-white">wilsonlimsetiawan@gmail.com</a>
+          <a href="mailto:wilsonlimset@gmail.com" className="hover:text-gray-900 dark:hover:text-white">wilsonlimset@gmail.com</a>
           <a href="https://instagram.com/chengyuapp" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 dark:hover:text-white">@chengyuapp</a>
         </div>
         <nav className="flex gap-6">
+          <Link href="/support" className="hover:text-gray-900 dark:hover:text-white">Support</Link>
           <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white">Terms</Link>
           <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white">Privacy</Link>
         </nav>
