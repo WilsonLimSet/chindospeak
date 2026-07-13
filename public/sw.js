@@ -1,76 +1,27 @@
-// Service Worker for ChindoSpeak PWA
-const CACHE_NAME = 'chindospeak-v7';
-const OFFLINE_URL = '/offline';
-const urlsToCache = [
-  '/',
-  OFFLINE_URL,
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
-];
+// Kill-switch service worker.
+//
+// ChindoSpeak is a native iOS app now; the PWA is gone. Browsers that visited the old
+// site still have the previous service worker registered, and it would keep serving the
+// cached app shell forever. This file must therefore keep existing at this URL: browsers
+// re-fetch it, get this version instead, and it unregisters itself and drops the caches.
+//
+// Do not delete this file until the old service worker has drained from the wild.
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener('install', () => {
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.keys().then((cacheNames) =>
-        Promise.all(
-          cacheNames
-            .filter((name) => name !== CACHE_NAME)
-            .map((name) => caches.delete(name))
-        )
-      ),
-      self.clients.claim()
-    ])
-  );
-});
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+      await self.registration.unregister();
 
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-
-  // Only handle GET; let everything else pass through.
-  if (request.method !== 'GET') return;
-
-  // Navigation requests: network-first with offline fallback.
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() =>
-        caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL))
-      )
-    );
-    return;
-  }
-
-  // Same-origin static assets: cache-first.
-  const url = new URL(request.url);
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(request).then((cached) => cached || fetch(request))
-    );
-  }
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        for (const client of clientList) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        if (clients.openWindow) {
-          return clients.openWindow('/');
-        }
-      })
+      const windows = await self.clients.matchAll({ type: 'window' });
+      for (const client of windows) {
+        client.navigate(client.url);
+      }
+    })()
   );
 });

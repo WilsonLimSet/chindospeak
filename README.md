@@ -1,112 +1,59 @@
 # ChindoSpeak
 
-ChindoSpeak is a Progressive Web App for learning Mandarin Chinese and Indonesian with flashcards, listening practice, speaking review, drive mode, and short-form video imports.
+This repo is two things:
 
-## Architecture Overview
+1. **The marketing site** at [chindospeak.com](https://www.chindospeak.com) — a static landing page plus Support, Terms, and Privacy. Hosted on Vercel.
+2. **The API backend** for the ChindoSpeak iOS app — `/api/video/process`, `/api/translate`, `/api/tts`, `/api/pinyin`. Hosted on Cloud Run.
 
-This project implements a unified architecture that consolidates the Chinese and Indonesian language learning applications into a single, maintainable codebase.
+The product itself is a native iOS app ([App Store](https://apps.apple.com/us/app/chindospeak-mandarin-indo/id6770179868)) that turns TikToks, Instagram Reels, and YouTube Shorts into Mandarin and Indonesian flashcards. The iOS source lives in a separate repo (`~/chindospeak-ios`).
 
-### Directory Structure
+There used to be a PWA web app here — flashcards, listening, speaking, drive mode. It has been removed in favour of the native app. Only the landing page and the API remain.
+
+## Structure
 
 ```
 chindospeak/
-├── shared/
-│   ├── components/          # Reusable UI components
-│   ├── contexts/           # Shared React contexts
-│   ├── utils/              # Utility functions and services
-│   ├── types/              # TypeScript type definitions
-│   └── hooks/              # Custom React hooks
-├── language-configs/
-│   ├── base.config.ts      # Base language configuration interface
-│   ├── chinese.config.ts   # Chinese language configuration
-│   └── indonesian.config.ts # Indonesian language configuration
-├── apps/
-│   ├── chinese/            # Chinese learning app instance
-│   └── indonesian/         # Indonesian learning app instance
-└── package.json           # Root package configuration
+├── app/
+│   ├── page.tsx            # Landing page (server component)
+│   ├── support|terms|privacy/
+│   ├── robots.ts, sitemap.ts, opengraph-image.tsx
+│   └── api/                # Backend for the iOS app
+│       ├── video/process/  # yt-dlp + Whisper + GPT-4o-mini pipeline
+│       ├── translate/      # Baidu (Chinese), Google (Indonesian)
+│       ├── tts/            # msedge-tts
+│       └── pinyin/
+├── shared/utils/           # Google translation client
+├── cookies/                # yt-dlp cookies (gitignored, shipped to Cloud Run)
+└── Dockerfile              # Cloud Run image
 ```
 
-## Key Features
+`public/sw.js` is a kill-switch service worker: it unregisters the old PWA's
+service worker and clears its caches. Browsers that visited the old site still
+have that worker registered and would otherwise serve the stale cached app
+forever. Leave the file in place until it has drained from the wild.
 
-- **Learn from Video**: paste a TikTok, Instagram Reel, or YouTube Short and generate a transcript, translation, phrase drill, speaking prompt, and review-ready flashcards.
-- **Spaced Repetition Flashcards**: separate reading, listening, and speaking review levels.
-- **Listening and Speaking Practice**: practice saved cards with audio and speech recognition.
-- **Drive Mode**: hands-free review for cards that are due.
-- **Offline PWA**: installable mobile experience with local-first card storage.
+## Getting started
 
-### Unified Components
-- **PwaWrapper**: PWA installation handling
-- **AudioButton**: Language-agnostic audio playback
-- **PwaContext**: PWA state management
-- **UnifiedAudioService**: Cross-language TTS service
-- **UnifiedTranslationService**: Multi-provider translation service
+```bash
+npm install
+brew install yt-dlp ffmpeg   # only needed to run the video API locally
+cp .env.example .env.local   # add OPENAI_API_KEY
+npm run dev
+```
 
-### Language Configuration System
-Each language is configured through a structured configuration file that defines:
-- Voice options and priorities
-- Translation service settings
-- UI text and translations
-- Theme colors
-- Language-specific features (romanization, tone markers, etc.)
-
-### Translation Services
-Supports multiple translation providers:
-- **Baidu Translate** (Chinese) - With API key authentication
-- **MyMemory** (Indonesian) - Free, no authentication required
-- **Google Translate** (Extensible)
-
-### Audio Services
-Unified text-to-speech system with:
-- Language-specific voice prioritization
-- Cross-browser compatibility
-- Fallback voice selection
-- Speech control (play, pause, stop)
-
-## Benefits of Unified Architecture
-
-1. **Code Reuse**: ~70% reduction in duplicate code
-2. **Maintainability**: Single codebase for common functionality
-3. **Consistency**: Uniform user experience across languages
-4. **Extensibility**: Easy to add new languages
-5. **Type Safety**: Shared TypeScript definitions
-6. **Performance**: Shared dependencies and optimizations
-
-## Getting Started
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Install local video tooling for the video import feature:
-   ```bash
-   brew install yt-dlp ffmpeg
-   ```
-
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Add `OPENAI_API_KEY` to `.env.local` for video transcription, OCR, vocab extraction, and speaking prompts. Baidu and Google translation keys are optional.
-
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Open [http://localhost:3000](http://localhost:3000).
+`OPENAI_API_KEY` powers video transcription, OCR, and vocab extraction. Baidu and
+Google translation keys are optional — each provider falls back to a mock
+response when its key is absent.
 
 ## Deploying the backend (Cloud Run)
 
-The iOS app at `~/chindospeak-ios` calls `/api/video/process`, `/api/translate`,
-`/api/tts`, and `/api/pinyin` on the Cloud Run service
-`chindospeak-backend-1004724780099.asia-southeast1.run.app`. The marketing
-site (the rest of this repo) stays on Vercel; Cloud Run runs the same code
-for the API routes because yt-dlp + ffmpeg + a JS runtime are needed for
-video processing and Vercel's serverless runtime can't ship those. Vercel
-can optionally proxy `/api/video/process` to Cloud Run by setting
-`VIDEO_SERVICE_URL` (see the top of `app/api/video/process/route.ts`).
+The iOS app calls the API on the Cloud Run service
+`chindospeak-backend-1004724780099.asia-southeast1.run.app`. The marketing site
+stays on Vercel; Cloud Run runs the same code for the API routes because
+yt-dlp + ffmpeg + a JS runtime are needed for video processing and Vercel's
+serverless runtime can't ship those. Vercel can optionally proxy
+`/api/video/process` to Cloud Run by setting `VIDEO_SERVICE_URL` (see the top of
+`app/api/video/process/route.ts`).
 
 ### One-time setup
 
@@ -127,9 +74,9 @@ yt-dlp --cookies-from-browser chrome --cookies cookies/instagram_cookies.txt \
     --skip-download 'https://www.instagram.com/'
 ```
 
-Then filter each to just the relevant domains (per `cookies/README.txt`).
-The files are gitignored and re-included in `.gcloudignore` so they ship
-to Cloud Run without ever landing on GitHub.
+Then filter each to just the relevant domains (per `cookies/README.txt`). The
+files are gitignored and re-included in `.gcloudignore` so they ship to Cloud Run
+without ever landing on GitHub.
 
 ### Deploy
 
@@ -144,37 +91,22 @@ gcloud run deploy chindospeak-backend \
 ```
 
 Cloud Run reads the `Dockerfile`, builds the image, pushes it to Artifact
-Registry, and rolls out a new revision. First deploy ~5 min; subsequent
-deploys reuse cached layers and take ~2 min.
+Registry, and rolls out a new revision. First deploy ~5 min; subsequent deploys
+reuse cached layers and take ~2 min.
 
 ### Refreshing cookies
 
 When imports start failing with "needs fresh login cookies", re-run the
 extraction commands above and redeploy.
 
-## Adding a New Language
+## Stack
 
-1. Create a new language configuration in `language-configs/`
-2. Implement the `BaseLanguageConfig` interface
-3. Add translation service support if needed
-4. Create an app instance in `apps/`
-5. Configure voice options and UI text
-
-## Migration from Original Apps
-
-The original language-specific apps have been analyzed and their common components extracted into the shared directory. Language-specific functionality has been abstracted into configuration files, allowing for easy maintenance and extension.
-
-## Technology Stack
-
-- **Next.js 16** - React framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **PWA** - Offline capability
-- **Web Speech API** - Text-to-speech
-- **OpenAI Whisper + GPT-4o-mini** - Video transcription, OCR reconciliation, lesson generation
-- **yt-dlp + ffmpeg** - Local short-form video processing
-- **Multiple Translation APIs** - Baidu, MyMemory, Google (extensible)
+- **Next.js 16** (App Router) + TypeScript + Tailwind
+- **OpenAI Whisper + GPT-4o-mini** — transcription, OCR reconciliation, vocab extraction
+- **yt-dlp + ffmpeg** — short-form video processing
+- **Baidu / Google** — translation
+- **msedge-tts** — text-to-speech
 
 ## License
 
-Private project for language learning applications.
+Private.

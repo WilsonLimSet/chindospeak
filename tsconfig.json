@@ -28,9 +28,6 @@
       ],
       "@/shared/*": [
         "./shared/*"
-      ],
-      "@/language-configs/*": [
-        "./language-configs/*"
       ]
     },
     "target": "ES2017"
