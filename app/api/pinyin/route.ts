@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import chineseToPinyin from 'chinese-to-pinyin';
+import { toPinyin } from '@/shared/utils/pinyin';
 
 const MAX_TEXT_LENGTH = 500;
 
@@ -20,9 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Text must be ${MAX_TEXT_LENGTH} characters or fewer` }, { status: 413 });
     }
 
-    const pinyinText = chineseToPinyin(text);
-
-    return NextResponse.json({ pinyin: pinyinText });
+    return NextResponse.json({ pinyin: toPinyin(text) });
   } catch (error) {
     console.error('Pinyin API route error:', error);
     return NextResponse.json({ error: 'Failed to convert to pinyin' }, { status: 500 });
