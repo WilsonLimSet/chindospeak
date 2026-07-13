@@ -1,15 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ConditionalNavigation from "./components/ConditionalNavigation";
-import OfflineDetector from '@/shared/components/OfflineDetector';
-import InstallPrompt from './components/InstallPrompt';
-import InstallInstructions from './components/InstallInstructions';
-import ConditionalFloatingLanguageSwitcher from '@/shared/components/ConditionalFloatingLanguageSwitcher';
-import DynamicThemeColor from '@/shared/components/DynamicThemeColor';
 import { Analytics } from '@vercel/analytics/next';
-import { PwaProvider } from '@/shared/contexts/PwaContext';
-import { LanguageProvider } from '@/shared/contexts/LanguageContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,18 +13,61 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://www.chindospeak.com";
+
 export const metadata: Metadata = {
-  title: "ChindoSpeak - Language Learning",
-  description: "Learn from short videos, flashcards, listening practice, and speaking review",
-  manifest: "/manifest.json",
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/icons/icon-192x192.png',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "ChindoSpeak — Learn Mandarin and Indonesian from Reels",
+    template: "%s | ChindoSpeak",
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "ChindoSpeak"
+  description:
+    "Paste a TikTok, Instagram reel, or YouTube short. ChindoSpeak transcribes it, pulls out the phrases worth learning, and drills them with spaced repetition. Built for Chinese-Indonesian heritage speakers. Free on iPhone.",
+  keywords: [
+    "learn Mandarin",
+    "learn Indonesian",
+    "heritage speakers",
+    "Chinese Indonesian",
+    "spaced repetition",
+    "flashcards from video",
+    "language learning app",
+  ],
+  applicationName: "ChindoSpeak",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: "ChindoSpeak",
+    title: "ChindoSpeak — Learn Mandarin and Indonesian from Reels",
+    description:
+      "Turn the reels you already watch into Mandarin and Indonesian flashcards. Spaced repetition across reading, listening, and speaking. Free on iPhone.",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ChindoSpeak — Learn Mandarin and Indonesian from Reels",
+    description:
+      "Turn the reels you already watch into Mandarin and Indonesian flashcards. Free on iPhone.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/icon-192x192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icons/icon-512x512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: { url: '/icons/apple-touch-icon-180x180.png', sizes: '180x180' },
   },
   formatDetection: {
     telephone: false
@@ -42,9 +77,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -54,45 +86,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
-                });
-              }
-            `,
-          }}
-        />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152x152.png" />
-        <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120x120.png" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
-        <LanguageProvider>
-          <PwaProvider appName="ChindoSpeak">
-            <DynamicThemeColor />
-            <ConditionalNavigation />
-            <main className="min-h-[100dvh] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-              {children}
-            </main>
-            <OfflineDetector />
-            <InstallPrompt />
-            <InstallInstructions />
-            <ConditionalFloatingLanguageSwitcher />
-            <Analytics />
-          </PwaProvider>
-        </LanguageProvider>
+        <main>{children}</main>
+        <Analytics />
       </body>
     </html>
   );

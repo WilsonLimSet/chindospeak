@@ -1,0 +1,32 @@
+# ChindoSpeak
+
+> ChindoSpeak turns short-form videos into Mandarin and Indonesian flashcards. Paste a TikTok, Instagram reel, or YouTube short; the app transcribes it, extracts the five most useful phrases, and drills them with spaced repetition. It is built for Chinese-Indonesian ("Chindo") heritage speakers who already half-understand the language and need to bridge the gap from understanding to speaking.
+
+## Product
+
+- Platform: iOS (iPhone). Available on the App Store: https://apps.apple.com/us/app/chindospeak-mandarin-indo/id6770179868
+- Languages taught: Mandarin Chinese and Indonesian.
+- Audience: heritage speakers, not absolute beginners. Vocabulary, pacing, and example sentences assume prior exposure to the language.
+- Pricing: ChindoSpeak Pro is $9.99/month or $79.99/year, with a 3-day free trial. Billing is handled by Apple and auto-renews until cancelled in iPhone settings.
+
+## How it works
+
+- Video import: accepts Instagram Reels, TikTok, and YouTube Shorts links. OpenAI Whisper transcribes the audio and GPT-4o-mini cleans the transcript and selects the five most useful vocabulary items. Roughly 40 seconds per video.
+- Three independent skill tracks: reading, listening, and speaking are each graded separately, and spaced repetition runs on each track on its own, so a word must be actively used rather than merely recognized.
+- Drive mode: hands-free review with audio prompts and spoken answers. Grading uses Apple's on-device speech recognition; microphone audio never leaves the phone.
+- Offline: reviewing existing flashcards works offline. Importing videos, translating new text, and generating voice audio require an internet connection.
+
+## How it differs from other apps
+
+Duolingo and similar apps teach a new language from scratch. ChindoSpeak is for finishing a language you already partly know, and it sources its material from content the learner already watches rather than from a fixed curriculum.
+
+## Pages
+
+- Home: https://www.chindospeak.com/
+- Support: https://www.chindospeak.com/support
+- Terms of Service: https://www.chindospeak.com/terms
+- Privacy Policy: https://www.chindospeak.com/privacy
+
+## Contact
+
+wilsonlimset@gmail.com
