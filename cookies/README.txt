@@ -18,7 +18,13 @@ re-included in .gcloudignore so they DO upload to Cloud Run.
 
 How to refresh
 --------------
-Easiest: yt-dlp can extract them directly from your local Chrome.
+Preferred: scripts/refresh-cookies.sh "<Chrome profile dir>"
+It exports from a dedicated Chrome profile, stores the cookies in Secret
+Manager (mounted at /secrets/<host>/), rolls a revision without a rebuild,
+and checks /api/video/health. Use a profile you don't browse in, or Google
+rotates the cookies within days.
+
+Legacy (baked into the image, needs a full redeploy): yt-dlp can extract them directly from your local Chrome.
 
   cd ~/chindospeak
   yt-dlp --cookies-from-browser chrome --cookies cookies/youtube_cookies.txt \
@@ -43,8 +49,10 @@ export from each site's tab manually.
 
 When to refresh
 ---------------
-Sessions typically last weeks to months. If imports start returning
-"needs fresh login cookies", re-extract and redeploy.
+Sessions typically last weeks to months. When
+GET /api/video/health reports a host with "failure":"auth", refresh.
+The server retries every download without cookies, so stale Instagram
+cookies no longer break public reels.
 
 Security note
 -------------
