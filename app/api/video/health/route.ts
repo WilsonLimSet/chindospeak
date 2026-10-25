@@ -75,15 +75,32 @@ async function runProbe(host: "youtube" | "instagram", cookies: string | null): 
 /// GET /api/video/health — is video import working right now? Returns 200
 /// when both hosts resolve, 503 otherwise. Used by scripts/refresh-cookies.sh
 /// to verify a refresh, and safe to point an uptime check at.
+type HealthBody = { ok: boolean; youtube: ProbeResult; instagram: ProbeResult; checkedAt: string };
+// Concurrent callers share one in-flight probe instead of each spawning
+// their own yt-dlp processes before the cache is filled.
+let inflight: Promise<HealthBody> | null = null;
+
+async function runHealthCheck(): Promise<HealthBody> {
+  const [youtube, instagram] = await Promise.all([probe("youtube"), probe("instagram")]);
+  return { ok: youtube.ok && instagram.ok, youtube, instagram, checkedAt: new Date().toISOString() };
+}
+
 export async function GET(req: NextRequest) {
   const wantsFresh = req.nextUrl.searchParams.get("fresh") === "1";
   const maxAge = wantsFresh ? FRESH_MIN_MS : CACHE_MS;
+  let body: HealthBody;
   if (cached && Date.now() - cached.at < maxAge) {
-    const body = cached.body as { ok: boolean };
-    return NextResponse.json(body, { status: body.ok ? 200 : 503 });
+    body = cached.body as HealthBody;
+  } else {
+    inflight ??= runHealthCheck()
+      .then((result) => {
+        cached = { at: Date.now(), body: result };
+        return result;
+      })
+      .finally(() => {
+        inflight = null;
+      });
+    body = await inflight;
   }
-  const [youtube, instagram] = await Promise.all([probe("youtube"), probe("instagram")]);
-  const body = { ok: youtube.ok && instagram.ok, youtube, instagram, checkedAt: new Date().toISOString() };
-  cached = { at: Date.now(), body };
   return NextResponse.json(body, { status: body.ok ? 200 : 503 });
 }
