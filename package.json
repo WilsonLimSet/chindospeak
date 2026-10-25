@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
     "build:pinyin": "node scripts/generate-pinyin-dict.mjs"
   },
   "dependencies": {
