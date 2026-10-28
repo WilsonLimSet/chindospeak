@@ -1,12 +1,20 @@
 import { randomUUID } from "crypto";
 import { createReadStream } from "fs";
-import { access, mkdir, readFile, readdir, rm, unlink } from "fs/promises";
+import { access, copyFile, mkdir, readFile, readdir, rm, unlink } from "fs/promises";
 import os from "os";
 import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import {
+  classifyDownloadError,
+  cookieCandidates,
+  downloadAttempts,
+  hostOf,
+  userMessageFor,
+  type DownloadFailure,
+} from "@/shared/utils/videoDownload";
 
 const execFileAsync = promisify(execFile);
 
@@ -89,7 +97,15 @@ export async function POST(req: NextRequest) {
 
   try {
     videoPath = await downloadVideo(url, outputTemplate);
-    await extractAudio(videoPath, audioPath);
+    try {
+      await extractAudio(videoPath, audioPath);
+    } catch (err) {
+      const stderr = typeof err === "object" && err !== null && "stderr" in err ? String(err.stderr) : "";
+      if (stderr.includes("does not contain any stream")) {
+        throw new VideoDownloadError("no_audio", userMessageFor("no_audio", hostOf(url)), stderr);
+      }
+      throw err;
+    }
     const subtitleText = await extractSubtitleText(openai, videoPath, frameDir).catch(() => "");
 
     const transcription = await openai.audio.transcriptions.create({
@@ -217,9 +233,12 @@ Pick the 5 most useful vocab items for a learner with roughly second-grade fluen
         : [],
     });
   } catch (err) {
+    // The raw error (command line, yt-dlp output) is for the logs only.
+    console.error("video/process failed", { url, error: err instanceof Error ? err.message : String(err) });
+    const status = err instanceof VideoDownloadError ? err.status : 500;
     return NextResponse.json(
-      { error: humanizeError(err) },
-      { status: 500 },
+      { error: err instanceof VideoDownloadError ? err.userMessage : humanizeError(err), reason: err instanceof VideoDownloadError ? err.failure : undefined },
+      { status },
     );
   } finally {
     await unlink(audioPath).catch(() => undefined);
@@ -229,6 +248,33 @@ Pick the 5 most useful vocab items for a learner with roughly second-grade fluen
     await rm(frameDir, { recursive: true, force: true }).catch(() => undefined);
   }
 }
+
+/// A download that failed on every attempt, carrying a message that's safe
+/// to show users.
+class VideoDownloadError extends Error {
+  constructor(
+    readonly failure: DownloadFailure,
+    readonly userMessage: string,
+    detail: string,
+  ) {
+    super(detail);
+  }
+
+  get status() {
+    // 422 for problems with the video itself, 502 when the upstream site
+    // blocked us — lets the client (and logs) tell the two apart.
+    return this.failure === "unavailable" ||
+      this.failure === "too_large" ||
+      this.failure === "unsupported" ||
+      this.failure === "no_audio"
+      ? 422
+      : 502;
+  }
+}
+
+// When attempts fail differently, report the most specific reason: a private
+// video is private whether or not we had cookies.
+const FAILURE_PRIORITY: DownloadFailure[] = ["unavailable", "too_large", "unsupported", "timeout", "auth", "missing_tool", "unknown"];
 
 async function downloadVideo(url: string, outputTemplate: string) {
   const baseArgs = [
@@ -246,39 +292,66 @@ async function downloadVideo(url: string, outputTemplate: string) {
     url,
   ];
 
-  // Both Instagram and YouTube now require auth for requests from Cloud Run
-  // IP ranges (anti-bot blocklists). If a host-matched cookies file is
-  // present in the container, use it from the first attempt — the no-cookie
-  // path is essentially guaranteed to fail and wastes ~5s per request.
-  const cookiesPath = await resolveCookiesPathForUrl(url);
-  if (cookiesPath) {
-    return await runYtDlp(["--cookies", cookiesPath, ...baseArgs]);
-  }
+  const host = hostOf(url);
+  const cookiesSource = await firstExisting(cookieCandidates(host, process.cwd()));
+  // yt-dlp writes the jar back on exit, and the Secret Manager mount is
+  // read-only — so every download works on its own scratch copy.
+  const cookiesPath = cookiesSource
+    ? path.join(path.dirname(outputTemplate), `${path.basename(outputTemplate).split(".")[0]}-cookies.txt`)
+    : null;
+  if (cookiesSource && cookiesPath) await copyFile(cookiesSource, cookiesPath);
+  const failures: { failure: DownloadFailure; message: string }[] = [];
 
-  return await runYtDlp(baseArgs);
+  try {
+    return await attemptDownloads(baseArgs, cookiesPath, host, outputTemplate, failures);
+  } finally {
+    if (cookiesPath) await rm(cookiesPath, { force: true });
+  }
 }
 
-/// Returns the cookies file path appropriate for the URL's host:
-///   instagram.com → cookies/instagram_cookies.txt
-///   youtube.com   → cookies/youtube_cookies.txt
-///   youtu.be      → cookies/youtube_cookies.txt
-///
-/// In Cloud Run the files live under /app/cookies/ (Dockerfile COPYs the
-/// dir). In local dev they live next to the repo root. Returns null when
-/// no matching file is present so the caller can decide what to do.
-async function resolveCookiesPathForUrl(url: string): Promise<string | null> {
-  let basename: string | null = null;
-  if (url.includes("instagram.com")) {
-    basename = "instagram_cookies.txt";
-  } else if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    basename = "youtube_cookies.txt";
+async function attemptDownloads(
+  baseArgs: string[],
+  cookiesPath: string | null,
+  host: ReturnType<typeof hostOf>,
+  outputTemplate: string,
+  failures: { failure: DownloadFailure; message: string }[],
+) {
+  for (const args of downloadAttempts(baseArgs, cookiesPath)) {
+    try {
+      return await runYtDlp(args);
+    } catch (err) {
+      const killed = typeof err === "object" && err !== null && "killed" in err && err.killed === true;
+      const message = `${err instanceof Error ? err.message : String(err)}${killed ? " (timed out)" : ""}`;
+      // Classify on yt-dlp's own output, not err.message: that embeds the
+      // command line, whose flags (--max-filesize, --cookies) match patterns.
+      const stderr = typeof err === "object" && err !== null && "stderr" in err ? String(err.stderr) : "";
+      const failure = classifyDownloadError(`${stderr}${killed ? " (timed out)" : ""}`);
+      failures.push({ failure, message });
+      await removePartialDownloads(outputTemplate, cookiesPath);
+      console.warn("yt-dlp attempt failed", { host, withCookies: args[0] === "--cookies", failure, message: message.slice(-500) });
+      // Retrying anonymously can't fix a video that's gone or too big.
+      if (failure === "unavailable" || failure === "too_large" || failure === "unsupported") break;
+    }
   }
-  if (!basename) return null;
 
-  const candidates = [
-    `/app/cookies/${basename}`,
-    path.join(process.cwd(), "cookies", basename),
-  ];
+  const worst = FAILURE_PRIORITY.find((f) => failures.some((x) => x.failure === f)) ?? "unknown";
+  throw new VideoDownloadError(worst, userMessageFor(worst, host), failures.map((f) => f.message).join("\n---\n"));
+}
+
+/// A failed attempt can leave .part / fragment files behind. /tmp on Cloud
+/// Run is memory, so clear them before the next attempt.
+async function removePartialDownloads(outputTemplate: string, keep: string | null) {
+  const dir = path.dirname(outputTemplate);
+  const prefix = path.basename(outputTemplate).split(".")[0];
+  const entries = await readdir(dir).catch(() => [] as string[]);
+  await Promise.all(
+    entries
+      .filter((name) => name.startsWith(prefix) && path.join(dir, name) !== keep)
+      .map((name) => rm(path.join(dir, name), { force: true, recursive: true }).catch(() => undefined)),
+  );
+}
+
+async function firstExisting(candidates: string[]): Promise<string | null> {
   for (const candidate of candidates) {
     if (await fileExists(candidate)) {
       return candidate;
@@ -289,7 +362,9 @@ async function resolveCookiesPathForUrl(url: string): Promise<string | null> {
 
 async function runYtDlp(args: string[]) {
   const { stdout } = await execFileAsync("yt-dlp", args, {
-    timeout: 60_000,
+    // Two attempts (cookies, then anonymous) must fit well inside the
+    // route's 300s budget alongside transcription and the LLM pass.
+    timeout: 50_000,
     maxBuffer: 1024 * 1024 * 10,
   });
 
@@ -438,43 +513,18 @@ function humanizeError(err: unknown) {
   const message = err instanceof Error ? err.message : String(err);
 
   if (message.includes("ENOENT") && message.includes("yt-dlp")) {
-    return "yt-dlp is not installed. Run: brew install yt-dlp ffmpeg";
+    return "Video import is temporarily unavailable. Please try again later.";
   }
 
   if (message.includes("ENOENT") && (message.includes("ffmpeg") || message.includes("ffprobe"))) {
-    return "ffmpeg is missing or unavailable. Run: brew install ffmpeg";
-  }
-
-  // Instagram session expired or cookies missing entirely.
-  if (
-    message.includes("instagram.com") &&
-    (message.includes("login") ||
-      message.includes("Sign in") ||
-      message.includes("Empty cookies file") ||
-      message.includes("rate-limit"))
-  ) {
-    return "This Instagram Reel needs fresh login cookies. Ask Wilson to refresh them.";
-  }
-
-  // YouTube anti-bot challenge — same fix as Instagram, different cookies file.
-  if (
-    (message.includes("youtube.com") || message.includes("youtu.be")) &&
-    (message.includes("Sign in to confirm") ||
-      message.includes("confirm you're not a bot") ||
-      message.includes("confirm you’re not a bot"))
-  ) {
-    return "This YouTube Short needs fresh login cookies. Ask Wilson to refresh them.";
-  }
-
-  if (message.includes("Command failed") || message.includes("Unable to")) {
-    return `Could not download this video. Try a different Reel or YouTube Short. Details: ${message}`;
+    return "Video import is temporarily unavailable. Please try again later.";
   }
 
   if (message.includes("timed out")) {
     return "The download took too long. Try a shorter clip.";
   }
 
-  return message || "Processing failed.";
+  return "Something went wrong processing this video. Please try again.";
 }
 
 async function fileExists(filePath: string) {
