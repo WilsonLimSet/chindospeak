@@ -147,7 +147,8 @@ function Footer() {
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           <a href="mailto:wilsonlimset@gmail.com" className="hover:text-gray-900 dark:hover:text-white">wilsonlimset@gmail.com</a>
         </div>
-        <nav className="flex gap-6">
+        <nav className="flex flex-wrap gap-6">
+          <Link href="/words" className="hover:text-gray-900 dark:hover:text-white">Slang dictionary</Link>
           <Link href="/support" className="hover:text-gray-900 dark:hover:text-white">Support</Link>
           <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white">Terms</Link>
           <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white">Privacy</Link>
