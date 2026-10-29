@@ -54,3 +54,13 @@ test("user messages never leak internals", () => {
     }
   }
 });
+
+test("TikTok's IP block reads as a blocked download, named for TikTok", () => {
+  const failure = classifyDownloadError(
+    "ERROR: [TikTok] 6748451240264420610: Your IP address is blocked from accessing this post"
+  );
+  assert.equal(failure, "auth");
+  const message = userMessageFor(failure, hostOf("https://www.tiktok.com/@a/video/1"));
+  assert.match(message, /TikTok is blocking/);
+  assert.doesNotMatch(message, /YouTube/);
+});

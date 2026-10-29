@@ -19,9 +19,12 @@ export const dynamic = "force-dynamic";
 
 // Long-lived public videos used as canaries. If these stop resolving, the
 // downloader (cookies, IP block, outdated yt-dlp) is broken for everyone.
-const CANARIES: Record<"youtube" | "instagram", string> = {
+type ProbeHost = "youtube" | "instagram" | "tiktok";
+
+const CANARIES: Record<ProbeHost, string> = {
   youtube: "https://www.youtube.com/shorts/Ia7kk6DuCcA",
   instagram: "https://www.instagram.com/reel/Chunk8-jurw/",
+  tiktok: "https://www.tiktok.com/@scout2015/video/6718335390845095173",
 };
 
 type ProbeResult = { ok: boolean; withCookies: boolean; failure?: DownloadFailure };
@@ -43,7 +46,7 @@ async function firstExisting(paths: string[]) {
   return null;
 }
 
-async function probe(host: "youtube" | "instagram"): Promise<ProbeResult> {
+async function probe(host: ProbeHost): Promise<ProbeResult> {
   const source = await firstExisting(cookieCandidates(host as VideoHost, process.cwd()));
   // Scratch copy: yt-dlp rewrites the jar and the secret mount is read-only.
   const cookies = source ? path.join(os.tmpdir(), `${randomUUID()}-cookies.txt`) : null;
@@ -55,7 +58,7 @@ async function probe(host: "youtube" | "instagram"): Promise<ProbeResult> {
   }
 }
 
-async function runProbe(host: "youtube" | "instagram", cookies: string | null): Promise<ProbeResult> {
+async function runProbe(host: ProbeHost, cookies: string | null): Promise<ProbeResult> {
   const attempts = cookies ? [["--cookies", cookies], []] : [[]];
   let failure: DownloadFailure = "unknown";
   for (const extra of attempts) {
@@ -73,16 +76,18 @@ async function runProbe(host: "youtube" | "instagram", cookies: string | null): 
 }
 
 /// GET /api/video/health — is video import working right now? Returns 200
-/// when both hosts resolve, 503 otherwise. Used by scripts/refresh-cookies.sh
+/// when the hosts the app offers (Instagram, TikTok) resolve, 503 otherwise.
+/// YouTube is still probed so a cookie refresh can be verified, but the app
+/// no longer sends YouTube links, so it doesn't fail the check. Used by scripts/refresh-cookies.sh
 /// to verify a refresh, and safe to point an uptime check at.
-type HealthBody = { ok: boolean; youtube: ProbeResult; instagram: ProbeResult; checkedAt: string };
+type HealthBody = { ok: boolean; youtube: ProbeResult; instagram: ProbeResult; tiktok: ProbeResult; checkedAt: string };
 // Concurrent callers share one in-flight probe instead of each spawning
 // their own yt-dlp processes before the cache is filled.
 let inflight: Promise<HealthBody> | null = null;
 
 async function runHealthCheck(): Promise<HealthBody> {
-  const [youtube, instagram] = await Promise.all([probe("youtube"), probe("instagram")]);
-  return { ok: youtube.ok && instagram.ok, youtube, instagram, checkedAt: new Date().toISOString() };
+  const [youtube, instagram, tiktok] = await Promise.all([probe("youtube"), probe("instagram"), probe("tiktok")]);
+  return { ok: instagram.ok && tiktok.ok, youtube, instagram, tiktok, checkedAt: new Date().toISOString() };
 }
 
 export async function GET(req: NextRequest) {

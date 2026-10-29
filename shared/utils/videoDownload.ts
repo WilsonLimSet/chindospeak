@@ -85,6 +85,7 @@ export function classifyDownloadError(message: string): DownloadFailure {
     m.includes("rate-limit") ||
     m.includes("empty media response") ||
     m.includes("not granting access") ||
+    m.includes("ip address is blocked") ||
     m.includes("failed to parse json")
   ) {
     return "auth";
@@ -95,10 +96,13 @@ export function classifyDownloadError(message: string): DownloadFailure {
 /// What the app shows. Never leaks internals (command lines, cookie paths,
 /// "ask Wilson") — the raw error goes to the server log instead.
 export function userMessageFor(failure: DownloadFailure, host: VideoHost): string {
-  const kind = host === "instagram" ? "Reel" : host === "youtube" ? "YouTube Short" : "video";
+  const kind =
+    host === "instagram" ? "Reel" : host === "youtube" ? "YouTube Short" : host === "tiktok" ? "TikTok" : "video";
+  const platform =
+    host === "instagram" ? "Instagram" : host === "youtube" ? "YouTube" : host === "tiktok" ? "TikTok" : "The site";
   switch (failure) {
     case "auth":
-      return `We couldn't get this ${kind} — ${host === "instagram" ? "Instagram" : "YouTube"} is blocking our downloader right now. Please try again later, or try a different video.`;
+      return `We couldn't get this ${kind} — ${platform} is blocking our downloader for it. Try a different video.`;
     case "unavailable":
       return `This ${kind} is private, removed, or region-locked. Try a public one.`;
     case "too_large":
@@ -106,7 +110,7 @@ export function userMessageFor(failure: DownloadFailure, host: VideoHost): strin
     case "timeout":
       return "The download took too long. Try a shorter clip.";
     case "unsupported":
-      return "That link isn't a video we can import. Share an Instagram Reel or YouTube Short.";
+      return "That link isn't a video we can import. Share an Instagram Reel or a TikTok.";
     case "no_audio":
       return "This video has no sound, so there's nothing to transcribe. Try one where someone is talking.";
     case "missing_tool":

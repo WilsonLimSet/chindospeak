@@ -28,7 +28,10 @@ ENV PORT=8080
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ffmpeg python3 ca-certificates curl unzip \
     && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+# The standalone Linux build bundles curl_cffi, which yt-dlp needs to
+# impersonate a browser — TikTok rejects requests without it ("no
+# impersonate target is available").
+RUN curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux \
       -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 RUN curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh -s -- -y
